@@ -2,8 +2,7 @@
 
 A turn-based browser game about running a corner shop on the edge of chaos.
 
-**[▶ Play it here]( https://sondreangeltveit.github.io/corner-shop-simulator/)**
-*(replace with your actual GitHub Pages link)*
+**[▶ Play it here] https://sondreangeltveit.github.io/corner-shop-simulator/ **
 
 ---
 
