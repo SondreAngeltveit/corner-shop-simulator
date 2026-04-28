@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corner Shop Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0c0a; --surface:#141412; --surface2:#1c1c19; --surface3:#242420;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#e8e5dc; --text2:#807d74; --text3:#484540;
+  --green:#4a9e6b; --green-dim:#162a1e; --green-text:#72c992; --green-mid:#1e3d2a;
+  --amber:#c47e1a; --amber-dim:#2e1f06; --amber-text:#eba84a; --amber-mid:#3d2a08;
+  --red:#b84040; --red-dim:#2a1010; --red-text:#e07070; --red-mid:#3d1515;
+  --blue:#3a6fa8; --blue-dim:#0e1f32; --blue-text:#7ab0e0;
+  --purple:#6a4fa8; --purple-dim:#1a1030; --purple-text:#b09ae0;
+  --mono:'IBM Plex Mono',monospace; --display:'Syne',sans-serif;
+  --r:6px; --rl:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem 4rem;}
+.window{width:100%;max-width:600px;background:var(--surface);border:0.5px solid var(--border2);border-radius:10px;overflow:hidden;}
+/* ── Start screen ── */
+#start-screen{padding:32px 24px 28px;}
+.start-logo{font-family:var(--display);font-size:28px;font-weight:800;color:var(--text);letter-spacing:-.03em;line-height:1;margin-bottom:4px;}
+.start-sub{font-size:11px;color:var(--text3);font-style:italic;margin-bottom:24px;}
+.diff-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.diff-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:24px;}
+.diff-btn{background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rl);padding:12px 8px;cursor:pointer;text-align:center;transition:border-color 0.15s,background 0.15s;}
+.diff-btn:hover{border-color:rgba(255,255,255,0.25);background:var(--surface3);}
+.diff-btn.selected{border-color:var(--amber);background:var(--amber-dim);}
+.diff-btn .d-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;font-family:var(--display);}
+.diff-btn .d-desc{font-size:10px;color:var(--text2);line-height:1.4;}
+.diff-btn .d-tag{font-size:9px;margin-top:4px;}
+.start-bottom{display:flex;gap:10px;align-items:stretch;}
+.start-go{flex:1;padding:13px;font-size:14px;font-family:var(--display);font-weight:700;letter-spacing:.02em;background:var(--green-mid);border:0.5px solid var(--green);color:var(--green-text);border-radius:var(--r);cursor:pointer;transition:background 0.15s;}
+.start-go:hover{background:#254535;}
+/* Leaderboard on start */
+.lb-section{margin-top:20px;}
+.lb-title{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.lb-title::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--text3);display:inline-block;}
+.lb-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:11px;}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{color:var(--text3);width:20px;flex-shrink:0;}
+.lb-name{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 8px;}
+.lb-score{color:var(--text);font-weight:500;margin-right:8px;}
+.lb-grade{font-family:var(--display);font-size:14px;font-weight:800;min-width:28px;text-align:right;}
+.lb-empty{font-size:11px;color:var(--text3);font-style:italic;padding:6px 0;}
+/* ── Shop header ── */
+.shop-header{padding:14px 20px 12px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end;gap:12px;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.008) 3px,rgba(255,255,255,0.008) 4px);}
+.shop-name{font-family:var(--display);font-size:20px;font-weight:800;color:var(--text);line-height:1;letter-spacing:-.02em;}
+.shop-tagline{font-size:10px;color:var(--text3);font-style:italic;margin-top:3px;letter-spacing:.02em;}
+.shop-right{text-align:right;flex-shrink:0;}
+.day-time{font-size:11px;color:var(--text2);margin-bottom:3px;}
+.hud-pills{display:flex;gap:5px;justify-content:flex-end;align-items:center;}
+.turn-pill{display:inline-block;font-size:10px;padding:2px 8px;background:var(--surface3);border:0.5px solid var(--border2);border-radius:20px;color:var(--text3);letter-spacing:.04em;}
+.diff-pill{font-size:9px;padding:2px 7px;border-radius:20px;border:0.5px solid transparent;font-weight:500;letter-spacing:.04em;}
+.diff-pill.chill{background:#0e2035;color:#7ab0e0;border-color:#3a6fa8;}
+.diff-pill.normal{background:var(--surface3);color:var(--text3);border-color:var(--border2);}
+.diff-pill.chaos{background:var(--red-dim);color:var(--red-text);border-color:var(--red);}
+/* ── Stat bar ── */
+.stat-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:0.5px solid var(--border);}
+.stat-cell{padding:9px 8px;text-align:center;border-right:0.5px solid var(--border);}
+.stat-cell:last-child{border-right:none;}
+.stat-lbl{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+.stat-val{font-size:18px;font-weight:500;color:var(--text);display:block;transition:color 0.4s;}
+.stat-val.warn{color:var(--amber-text);}.stat-val.danger{color:var(--red-text);}
+.stat-val.bump{animation:statBump 0.3s ease;}
+@keyframes statBump{0%{transform:scale(1);}40%{transform:scale(1.3);}100%{transform:scale(1);}}
+.stat-cell.pulsed{animation:cellPulse 0.5s ease;}
+@keyframes cellPulse{0%{background:transparent;}40%{background:var(--red-dim);}100%{background:transparent;}}
+/* ── Flavour bar ── */
+.flavour-bar{padding:6px 20px;border-bottom:0.5px solid var(--border);font-size:10px;font-style:italic;color:var(--text3);min-height:26px;display:flex;align-items:center;justify-content:space-between;transition:color 0.5s;}
+.flavour-bar.stressed{color:var(--red-text);}.flavour-bar.busy{color:var(--amber-text);}
+.upgrade-btn-small{font-size:9px;padding:2px 9px;border-radius:20px;background:var(--surface3);border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;white-space:nowrap;transition:border-color 0.15s,color 0.15s;font-family:var(--mono);}
+.upgrade-btn-small:hover{border-color:var(--amber);color:var(--amber-text);}
+/* ── Game body ── */
+.game-body{padding:14px 20px 18px;}
+.banner{display:none;padding:8px 12px;border-radius:var(--r);margin-bottom:10px;font-size:11px;font-weight:500;line-height:1.5;border:0.5px solid transparent;animation:slideDown 0.2s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.card{background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rl);padding:14px 16px;margin-bottom:10px;animation:cardIn 0.25s ease;}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.card-kicker{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.card-kicker::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.event-card .card-kicker::before{background:var(--amber-text);}
+.cust-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.cust-name{font-family:var(--display);font-size:17px;font-weight:700;color:var(--text);line-height:1.1;letter-spacing:-.01em;}
+.cust-tag{font-size:10px;color:var(--text2);margin-top:3px;font-style:italic;}
+.cust-desc{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px;}
+.cust-badge{font-size:9px;padding:3px 8px;border-radius:4px;font-weight:500;white-space:nowrap;flex-shrink:0;border:0.5px solid transparent;letter-spacing:.04em;}
+.cust-greeting{font-size:11px;font-style:italic;color:var(--text);border-left:2px solid var(--border2);padding:5px 10px;line-height:1.7;background:var(--surface3);border-radius:0 var(--r) var(--r) 0;}
+/* ── Mood bar + portrait ── */
+.cust-portrait{font-size:40px;line-height:1;flex-shrink:0;user-select:none;filter:saturate(0.9);}
+.cust-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.mood-bar{display:flex;gap:3px;align-items:center;}
+.mood-block{width:10px;height:6px;border-radius:2px;transition:background 0.2s;}
+.mood-block.filled-1{background:#72c992;}
+.mood-block.filled-2{background:#a8d870;}
+.mood-block.filled-3{background:#eba84a;}
+.mood-block.filled-4{background:#e07870;}
+.mood-block.filled-5{background:#e07070;}
+.mood-block.empty{background:var(--surface3);border:0.5px solid var(--border2);}
+.btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px;}
+.event-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+button{background:var(--surface3);border:0.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-family:var(--mono);font-size:11px;padding:10px 8px;cursor:pointer;transition:background 0.15s,border-color 0.15s,color 0.15s,transform 0.1s;line-height:1.4;text-align:center;}
+button:hover:not(:disabled){background:#2e2e2a;border-color:rgba(255,255,255,0.2);color:var(--text);}
+button:active:not(:disabled){transform:scale(0.96);}
+button:disabled{opacity:0.3;cursor:not-allowed;}
+button.primary{background:var(--green-mid);border-color:var(--green);color:var(--green-text);}
+button.primary:hover:not(:disabled){background:#254535;}
+.outcome{display:none;border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--text2);line-height:1.75;margin-bottom:10px;border:0.5px solid var(--border);background:var(--surface2);animation:cardIn 0.2s ease;}
+/* ── Stat delta preview ── */
+.btn-label{display:block;pointer-events:none;}
+.btn-delta{display:flex;justify-content:center;gap:6px;margin-top:5px;height:0;overflow:hidden;opacity:0;transition:height 0.15s ease,opacity 0.15s ease;pointer-events:none;}
+.btn-delta-item{font-size:9px;letter-spacing:.02em;line-height:1;white-space:nowrap;}
+.btn-delta-item.pos{color:#72c992;}
+.btn-delta-item.neg{color:#e07070;}
+.btn-delta-item.neu{color:var(--text3);}
+.btns button:hover:not(:disabled) .btn-delta,
+.btns button:focus:not(:disabled) .btn-delta{height:14px;opacity:1;}
+.log{border-top:0.5px solid var(--border);margin-top:6px;}
+.log-header{display:flex;justify-content:space-between;align-items:center;padding:6px 0 4px;cursor:pointer;user-select:none;}
+.log-header-label{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;}
+.log-chevron{font-size:10px;color:var(--text3);transition:transform 0.2s ease;line-height:1;}
+.log-chevron.open{transform:rotate(180deg);}
+.log-entries{max-height:50px;overflow:hidden;position:relative;transition:max-height 0.25s ease;}
+.log-entries.expanded{max-height:260px;overflow-y:auto;}
+.log-fade{position:absolute;bottom:0;left:0;right:0;height:26px;background:linear-gradient(transparent,var(--surface));pointer-events:none;transition:opacity 0.2s;}
+.log-fade.hidden{opacity:0;}
+.log-entry{font-size:10px;color:var(--text3);line-height:1.75;padding:1px 0;white-space:normal;word-break:break-word;}
+.log-entry .t-num{color:var(--text3);}.log-entry .ev-tag{color:var(--amber-text);}
+/* ── End of day summary ── */
+.eod-stat{background:var(--surface3);border-radius:var(--r);padding:8px 6px;text-align:center;}
+.eod-stat-lbl{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.eod-stat-val{font-size:15px;font-weight:500;}
+.eod-stat-val.pos{color:var(--green-text);}.eod-stat-val.neg{color:var(--red-text);}.eod-stat-val.neu{color:var(--text2);}
+/* ── Progress bar ── */
+.progress-bar-wrap{padding:6px 20px 0;border-bottom:0.5px solid var(--border);background:var(--surface);}
+.progress-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.progress-bar-label{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;}
+.progress-bar-turns{font-size:8px;color:var(--text3);}
+.progress-track{height:4px;background:var(--surface3);border-radius:2px;overflow:visible;position:relative;margin-bottom:6px;}
+.progress-fill{height:100%;border-radius:2px;background:var(--green);transition:width 0.4s ease;}
+.progress-fill.warn{background:var(--amber);}
+.progress-fill.done{background:var(--green-text);}
+.progress-milestone{position:absolute;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;border:1.5px solid var(--surface);z-index:1;transition:background 0.3s;}
+.progress-milestone.pending{background:var(--surface3);border-color:var(--border2);}
+.progress-milestone.reached{background:var(--amber-text);border-color:var(--amber);}
+.progress-milestone.passed{background:var(--green-text);border-color:var(--green);}
+/* ── Milestone popup ── */
+.milestone-card{border-color:var(--amber) !important;}
+.milestone-card .card-kicker::before{background:var(--amber-text) !important;}
+.milestone-upgrade-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
+.milestone-upg{background:var(--surface3);border:0.5px solid var(--border2);border-radius:var(--rl);padding:10px 12px;cursor:pointer;transition:border-color 0.15s,background 0.15s;user-select:none;}
+.milestone-upg:hover{border-color:var(--amber);background:var(--amber-dim);}
+.milestone-upg .mu-icon{font-size:20px;margin-bottom:4px;}
+.milestone-upg .mu-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.milestone-upg .mu-effect{font-size:10px;color:var(--text2);line-height:1.4;}
+/* ── End-of-run choice card ── */
+.win-card{border-color:var(--green) !important;}
+.win-card .card-kicker::before{background:var(--green-text) !important;}
+/* ── Supplies panel ── */
+#supplies-panel{display:none;animation:cardIn 0.2s ease;}
+.supplies-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.supply-card{background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rl);padding:10px 10px 8px;cursor:pointer;transition:border-color 0.15s,background 0.15s;text-align:center;}
+.supply-card:hover:not(.cant-afford){border-color:rgba(255,255,255,0.25);background:var(--surface3);}
+.supply-card.cant-afford{opacity:0.4;cursor:not-allowed;}
+.supply-icon{font-size:22px;margin-bottom:5px;display:block;line-height:1;}
+.supply-name{font-size:11px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.supply-effect{font-size:9px;color:var(--text2);margin-bottom:5px;line-height:1.4;}
+.supply-cost{font-size:11px;color:var(--amber-text);font-weight:500;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+/* ── Upgrades panel ── */
+#upgrade-panel{display:none;animation:cardIn 0.2s ease;}
+.upgrade-panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.upgrade-panel-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);}
+.upgrade-close{font-size:11px;color:var(--text3);cursor:pointer;padding:3px 8px;border:0.5px solid var(--border);border-radius:var(--r);background:transparent;transition:color 0.15s;}
+.upgrade-close:hover{color:var(--text);}
+.upgrade-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.upgrade-card{background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rl);padding:12px 14px;cursor:pointer;transition:border-color 0.15s,background 0.15s;}
+.upgrade-card:hover:not(.owned):not(.cant-afford){border-color:rgba(255,255,255,0.25);background:var(--surface3);}
+.upgrade-card.owned{border-color:var(--green);background:var(--green-dim);cursor:default;}
+.upgrade-card.cant-afford{opacity:0.4;cursor:not-allowed;}
+.upg-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.upg-effect{font-size:10px;color:var(--text2);margin-bottom:6px;line-height:1.4;}
+.upg-footer{display:flex;justify-content:space-between;align-items:center;}
+.upg-cost{font-size:11px;color:var(--amber-text);}
+.upg-owned-tag{font-size:9px;color:var(--green-text);}
+/* ── Game over ── */
+#gameover{display:none;padding:2.5rem 1.5rem 2rem;}
+.go-icon{font-size:48px;margin-bottom:14px;animation:goIn 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes goIn{from{transform:scale(0.3)rotate(-15deg);opacity:0;}to{transform:scale(1)rotate(0deg);opacity:1;}}
+.go-title{font-family:var(--display);font-size:24px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.02em;}
+.go-reason{font-size:13px;color:var(--text2);margin-bottom:4px;}
+.go-flavour{font-size:11px;color:var(--text3);font-style:italic;margin-bottom:18px;}
+/* Grade certificate */
+.grade-cert{background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--rl);padding:16px;margin-bottom:14px;text-align:center;}
+.grade-letter{font-family:var(--display);font-size:52px;font-weight:800;line-height:1;margin-bottom:6px;}
+.grade-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.grade-cert-text{font-size:11px;color:var(--text2);font-style:italic;line-height:1.7;}
+.go-stats{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:11px;color:var(--text2);margin-bottom:14px;line-height:2;}
+.go-btns{display:flex;gap:8px;justify-content:center;}
+#gameover .go-btns button{padding:10px 22px;font-size:12px;}
+#gameover .go-btns .primary{background:var(--green-mid);border-color:var(--green);color:var(--green-text);}
+/* Leaderboard in gameover */
+.go-lb{margin-top:16px;}
+/* ── Stat pills ── */
+.stat-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.stat-pill{font-size:10px;padding:3px 10px;border-radius:20px;background:var(--surface2);border:0.5px solid var(--border2);color:var(--text2);}
+.stat-pill strong{color:var(--text);font-weight:500;}
+/* ── Personal best banner ── */
+.pb-banner{display:none;background:var(--amber-dim);border:0.5px solid var(--amber);border-radius:var(--r);padding:8px 14px;margin-bottom:12px;text-align:center;font-size:12px;font-weight:500;color:var(--amber-text);animation:slideDown 0.3s ease;}
+.pb-banner.visible{display:block;}
+.pb-item{display:inline-block;margin:0 5px;font-size:10px;}
+/* ── Unlock roster ── */
+.unlock-roster{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.unlock-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--border);}
+.unlock-row:last-child{border-bottom:none;}
+.unlock-avatar{font-size:22px;width:28px;text-align:center;flex-shrink:0;line-height:1;}
+.unlock-avatar.locked{font-size:18px;color:var(--text3);}
+.unlock-info{flex:1;min-width:0;}
+.unlock-name{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px;}
+.unlock-hint{font-size:10px;color:var(--text3);font-style:italic;line-height:1.4;}
+.unlock-streak{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--amber-dim);border:0.5px solid var(--amber);color:var(--amber-text);white-space:nowrap;flex-shrink:0;}
+.unlock-grade-req{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--surface3);border:0.5px solid var(--border2);color:var(--text3);white-space:nowrap;flex-shrink:0;}
+/* ── Burst ── */
+.burst-container{position:fixed;pointer-events:none;z-index:9999;top:0;left:0;width:100%;height:100%;}
+.burst-emoji{position:absolute;font-size:22px;line-height:1;animation:burstFly var(--dur,0.9s) ease-out forwards;}
+@keyframes burstFly{0%{transform:translate(0,0)scale(1)rotate(0deg);opacity:1;}100%{transform:translate(var(--tx),var(--ty))scale(0.3)rotate(var(--rot));opacity:0;}}
+</style>
+</head>
+<body>
+<div class="burst-container" id="burst-container"></div>
+
+<div class="window">
+
+  <!-- ── START SCREEN ── -->
+  <div id="start-screen">
+    <div class="start-logo">Corner Shop</div>
+    <div class="start-sub">a management simulator of mild chaos</div>
+
+    <div class="diff-label">Choose your difficulty</div>
+    <div class="diff-grid">
+      <div class="diff-btn" id="diff-chill" onclick="selectDiff('chill')">
+        <div class="d-name">Chill</div>
+        <div class="d-desc">More money, slower stat decay. For a quiet life.</div>
+        <div class="d-tag" style="color:#7ab0e0">Easy going</div>
+      </div>
+      <div class="diff-btn selected" id="diff-normal" onclick="selectDiff('normal')">
+        <div class="d-name">Normal</div>
+        <div class="d-desc">The classic corner shop experience.</div>
+        <div class="d-tag" style="color:var(--text3)">Balanced</div>
+      </div>
+      <div class="diff-btn" id="diff-chaos" onclick="selectDiff('chaos')">
+        <div class="d-name">Chaos Mode</div>
+        <div class="d-desc">Events every 2 turns. Customers angrier. Good luck.</div>
+        <div class="d-tag" style="color:var(--red-text)">Unhinged</div>
+      </div>
+    </div>
+
+    <div class="start-bottom">
+      <button class="start-go" onclick="startGame()">Open Shop</button>
+    </div>
+
+    <div class="lb-section">
+      <div class="stat-pills" id="lb-stat-pills"></div>
+      <div class="lb-title">Past runs</div>
+      <div id="lb-start-rows"><div class="lb-empty">No runs yet. Be the first legend.</div></div>
+    </div>
+
+    <div class="lb-section" style="margin-top:4px;">
+      <div class="lb-title">Who you might meet</div>
+      <div id="unlock-roster"></div>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ── -->
+  <div id="game-screen" style="display:none">
+    <div class="shop-header">
+      <div>
+        <div class="shop-name" id="shop-name">—</div>
+        <div class="shop-tagline" id="shop-tagline"></div>
+      </div>
+      <div class="shop-right">
+        <div class="day-time" id="day-time">Mon · 8:00am</div>
+        <div class="hud-pills">
+          <span class="turn-pill">Turn <span id="turn-num">1</span></span>
+          <span class="diff-pill" id="diff-pill">normal</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat-cell" id="cell-money"><div class="stat-lbl">Money</div><span class="stat-val" id="stat-money">£50</span></div>
+      <div class="stat-cell" id="cell-rep"><div class="stat-lbl">Reputation</div><span class="stat-val" id="stat-rep">50</span></div>
+      <div class="stat-cell" id="cell-stress"><div class="stat-lbl">Stress</div><span class="stat-val" id="stat-stress">10</span></div>
+      <div class="stat-cell" id="cell-chaos"><div class="stat-lbl">Chaos</div><span class="stat-val" id="stat-chaos">0</span></div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-header">
+        <span class="progress-bar-label">Survival goal</span>
+        <span class="progress-bar-turns" id="progress-turns">Turn 1 / 30</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        <div class="progress-milestone" id="ms-15" style="left:50%" title="Turn 15: Free upgrade"></div>
+        <div class="progress-milestone" id="ms-25" style="left:83.3%" title="Turn 25: Loyal customer surge"></div>
+        <div class="progress-milestone" id="ms-30" style="left:100%" title="Turn 30: Goal!"></div>
+      </div>
+    </div>
+
+    <div class="flavour-bar" id="flavour-bar">
+      <span id="flavour-line">Opening time. The day stretches out before you.</span>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="upgrade-btn-small" onclick="toggleSupplies()">Supplies</button>
+        <button class="upgrade-btn-small" onclick="toggleUpgrades()">Upgrades</button>
+      </div>
+    </div>
+
+    <div class="game-body">
+      <div id="game-wrap">
+        <div class="banner" id="special-banner"></div>
+
+        <!-- Milestone: free upgrade picker -->
+        <div class="card milestone-card" id="milestone-card" style="display:none">
+          <div class="card-kicker">Milestone — Turn 15</div>
+          <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">Your loyalty is rewarded.</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:2px;line-height:1.6">The local business council has noticed your efforts. They're offering you a free installation. Pick one.</div>
+          <div class="milestone-upgrade-grid" id="milestone-upgrade-grid"></div>
+        </div>
+
+        <!-- Win condition: turn 30 choice -->
+        <div class="card win-card" id="win-card" style="display:none">
+          <div class="card-kicker" id="win-card-kicker">Turn 30 — Survival Goal Reached</div>
+          <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;" id="win-card-title">You made it. Thirty turns.</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6" id="win-card-desc">Against all odds — including Karen, the pigeons, and that sausage roll — the shop is still standing. What now?</div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
+            <button onclick="closeShop()" style="padding:12px 8px;font-size:12px;line-height:1.5;">
+              🔒 Close Up Shop<br><span style="font-size:10px;color:var(--text3);font-weight:400">Bank your score. End with dignity.</span>
+            </button>
+            <button class="primary" onclick="pushOn()" style="padding:12px 8px;font-size:12px;line-height:1.5;">
+              💪 Push On<br><span id="win-reward-preview" style="font-size:10px;color:var(--green-text);opacity:0.8;font-weight:400">Survive 20 more turns for a reward.</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Upgrades panel (inline, toggled) -->
+        <div id="upgrade-panel">
+          <div class="upgrade-panel-header">
+            <div class="upgrade-panel-title">Shop Upgrades</div>
+            <button class="upgrade-close" onclick="toggleUpgrades()">Close</button>
+          </div>
+          <div class="upgrade-grid" id="upgrade-grid"></div>
+          <div style="margin-top:8px;margin-bottom:10px;"></div>
+        </div>
+
+        <!-- Supplies panel (inline, toggled) -->
+        <div id="supplies-panel">
+          <div class="upgrade-panel-header">
+            <div class="upgrade-panel-title">Supplies</div>
+            <button class="upgrade-close" onclick="toggleSupplies()">Close</button>
+          </div>
+          <div class="supplies-grid" id="supplies-grid"></div>
+          <div style="margin-top:8px;margin-bottom:10px;"></div>
+        </div>
+
+        <div class="card event-card" id="event-card" style="display:none">
+          <div class="card-kicker" id="event-kicker">Random Event</div>
+          <div id="event-title" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:7px;letter-spacing:-.01em;line-height:1.2"></div>
+          <div id="event-desc" style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.7"></div>
+          <div class="event-btns" id="event-btns"></div>
+        </div>
+
+        <div class="card" id="eod-card" style="display:none">
+          <div class="card-kicker" id="eod-kicker">Closing Time</div>
+          <div id="eod-title" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px;letter-spacing:-.01em;line-height:1.2"></div>
+          <div id="eod-stats" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px;"></div>
+          <div id="eod-flavour" style="font-size:11px;font-style:italic;color:var(--text2);border-left:2px solid var(--border2);padding:4px 10px;background:var(--surface3);border-radius:0 var(--r) var(--r) 0;margin-bottom:12px;line-height:1.6;"></div>
+          <button class="primary" style="width:100%" onclick="dismissEod()">Open up for day <span id="eod-next-day"></span></button>
+        </div>
+
+        <div id="main-play">
+          <div class="card" id="cust-card">
+            <div class="card-kicker">Customer entering</div>
+            <div class="cust-header">
+              <div style="flex:1;min-width:0;">
+                <div class="cust-name" id="cust-name">—</div>
+                <div class="cust-tag" id="cust-tag">—</div>
+              </div>
+              <div class="cust-badge" id="cust-badge" style="display:none"></div>
+              <div class="cust-portrait" id="cust-portrait" aria-hidden="true"></div>
+            </div>
+            <div class="cust-meta">
+              <div class="mood-bar" id="cust-mood"></div>
+            </div>
+            <div class="cust-desc" id="cust-desc">—</div>
+            <div class="cust-greeting" id="cust-greeting"></div>
+          </div>
+          <div class="btns">
+            <button id="btn-a" onclick="doAction(0)"></button>
+            <button id="btn-b" onclick="doAction(1)"></button>
+            <button id="btn-c" onclick="doAction(2)"></button>
+          </div>
+          <div class="outcome" id="outcome-box"></div>
+        </div>
+
+        <div class="log" id="log-area" aria-live="polite">
+          <div class="log-header" onclick="toggleLog()">
+            <span class="log-header-label">Turn history</span>
+            <span class="log-chevron" id="log-chevron">▾</span>
+          </div>
+          <div class="log-entries" id="log-entries"></div>
+          <div class="log-fade" id="log-fade"></div>
+        </div>
+      </div>
+
+      <!-- ── GAME OVER ── -->
+      <div id="gameover">
+        <div style="text-align:center">
+          <div class="go-icon" id="go-icon"></div>
+          <div class="go-title" id="go-title"></div>
+          <div class="go-reason" id="go-reason"></div>
+          <div class="go-flavour" id="go-flavour"></div>
+        </div>
+        <div class="pb-banner" id="pb-banner"></div>
+        <div class="grade-cert" id="grade-cert">
+          <div class="grade-letter" id="grade-letter"></div>
+          <div class="grade-label" id="grade-label"></div>
+          <div class="grade-cert-text" id="grade-cert-text"></div>
+        </div>
+        <div class="go-stats" id="go-stats"></div>
+        <div class="go-lb">
+          <div class="lb-title">Leaderboard</div>
+          <div id="lb-go-rows"></div>
+        </div>
+        <div class="go-btns" style="margin-top:18px;">
+          <button onclick="goToStart()">Main Menu</button>
+          <button class="primary" onclick="restartGame()">Play Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Static data ───────────────────────────────────────────────────────────
+const SHOP_NAMES=[["Raj's Emporium","of Mild Regret"],["Dave's Corner","We're Open Probably"],["The Discount","Dungeon"],["Patel & Sons'","Unnecessary Goods"],["Gary's Fine","Provisions Ltd"],["The Optimistic","Tuck Shop"],["Beryl's","Bargain Cavern"],["Corner Shop","Est. Sometime"],["The Reluctant","Retailer"],["Mr Kwik's","Surprisingly Okay Shop"]];
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+const DIFFICULTY={
+  chill: {label:'Chill',startMoney:80,moneyMult:1.3,stressMult:0.7,chaosMult:0.6,eventFreqMin:4,eventFreqMax:7},
+  normal:{label:'Normal',startMoney:50,moneyMult:1.0,stressMult:1.0,chaosMult:1.0,eventFreqMin:3,eventFreqMax:5},
+  chaos: {label:'Chaos',startMoney:30,moneyMult:0.8,stressMult:1.4,chaosMult:1.6,eventFreqMin:2,eventFreqMax:3},
+};
+
+const UPGRADES=[
+  {id:'sign',    name:'Fancy Sign',       effect:'+8 Rep instantly, +2 Rep per turn',   cost:20, icon:'🪧', onBuy:(s)=>{s.rep+=8;},        perTurn:(s)=>{s.rep=Math.min(100,s.rep+2);}},
+  {id:'staff',   name:'Temp Staff',       effect:'-3 Stress per turn',                   cost:30, icon:'👷', onBuy:()=>{},                  perTurn:(s)=>{s.stress=Math.max(0,s.stress-3);}},
+  {id:'camera',  name:'Security Camera',  effect:'-2 Chaos per turn',                    cost:25, icon:'📷', onBuy:()=>{},                  perTurn:(s)=>{s.chaos=Math.max(0,s.chaos-2);}},
+  {id:'kettle',  name:'Staff Kettle',     effect:'+5 Stress relief now, morale boost',   cost:10, icon:'☕', onBuy:(s)=>{s.stress=Math.max(0,s.stress-5);}, perTurn:()=>{}},
+  {id:'window',  name:'Clean Window',     effect:'+5 Rep now, customers friendlier',     cost:15, icon:'🪟', onBuy:(s)=>{s.rep=Math.min(100,s.rep+5);}, perTurn:()=>{}},
+  {id:'music',   name:'Shop Radio',       effect:'-1 Stress & Chaos per turn',           cost:20, icon:'📻', onBuy:()=>{},                  perTurn:(s)=>{s.stress=Math.max(0,s.stress-1);s.chaos=Math.max(0,s.chaos-1);}},
+];
+
+const CONSUMABLES=[
+  {id:'paracetamol', icon:'💊', name:'Paracetamol',      cost:24, effect:'-15 Stress',  stat:'stress', delta:-15, quip:"You eat four. The packet says two."},
+  {id:'biscuits',    icon:'🍪', name:'Box of Biscuits',  cost:18, effect:'+8 Reputation',stat:'rep',    delta:8,   quip:"Left out for customers. Gone in four minutes."},
+  {id:'extinguisher',icon:'🧯', name:'Fire Extinguisher',cost:30, effect:'-8 Chaos',    stat:'chaos',  delta:-8,  quip:"Mostly decorative. Occasionally useful."},
+];
+
+const ACTION_EMOJIS={
+  karen:[['😰','🙏','💸'],['🙈','💰','😮‍💨'],['🔥','😱','💀']],
+  chatty:[['😄','☕','💬'],['👍','🛒','😊'],['😶','🥱','💤']],
+  suspicious:[['📋','✅','😤'],['😄','📰','✨'],['😠','📞','⚡']],
+  broke:[['❤️','🤝','⭐'],['💰','🪙','😤'],['😬','💔','👋']],
+  regular:[['🥰','🛍️','⭐'],['👍','😊','✅'],['😞','💔','😔']],
+  intimidating:[['😅','🍟','👊'],['🤝','📋','✅'],['😨','💦','😱']],
+  wannabe:[['📱','😬','🤦'],['🚫','😤','📣'],['🎥','🤷','✌️']],
+  tourist:[['🗺️','🛒','⭐'],['👉','🛍️','✅'],['😢','✈️','💔']],
+  bargain:[['🎉','🛒','😊'],['💪','💰','😤'],['🤝','👑','😎']],
+  rush:[['🏃','👋','🚗'],['⏳','🫡','⌛'],['🐢','😡','🚔']],
+  vip:[['🍾','💰','⭐'],['🥂','💳','😑'],['😤','💀','☎️']],
+  rude:[['🙄','😑','✅'],['😤','💪','😌'],['💥','📸','😡']],
+  donna:[['🛒','😅','👶'],['🤷','🛍️','😬'],['😬','💔','👋']],
+  phil: [['📚','🗣️','⭐'],['😶','📰','✅'],['🗞️','🚶','😌']],
+  fiona:[['📋','⭐','🧹'],['😊','💳','✅'],['😤','📝','⚡']],
+  marco:[['🍋','💰','⭐'],['😔','🛢️','💔'],['🤝','🫒','✅']],
+  investor:[['💰','🃏','✨'],['💧','😑','🤷'],['😱','🏢','⚡']],
+};
+
+const CUSTOMERS=[
+  {name:"Karen",        tag:"Entitled Karen",    desc:"Arms folded. She wants the manager. She IS the manager.",           greeting:'"I have been waiting THIRTY SECONDS. This is unacceptable."',        flavor:"karen",       mood:5, avatar:"😤", badge:{label:"DANGER",       bg:"#2a1010",color:"#e07070",border:"#b84040"}},
+  {name:"Dave",         tag:"Chatty",            desc:"Here for a pint of milk and an hour of your time.",                greeting:'"Did I ever tell you about my cousin\'s caravan holiday?"',          flavor:"chatty",      mood:2, avatar:"🗣️", badge:null},
+  {name:"Edna",         tag:"Suspicious",        desc:"Checks every price twice. Squints at you.",                        greeting:'"That price wasn\'t that last week, was it?"',                       flavor:"suspicious",  mood:3, avatar:"🧐", badge:null},
+  {name:"Tyler",        tag:"Broke",             desc:"Counting pennies. Literally.",                                     greeting:'"Can I get... actually how much is this? And this?"',               flavor:"broke",       mood:2, avatar:"🪙", badge:null},
+  {name:"Mrs Patel",    tag:"Regular",           desc:"Lovely. Just lovely. Remembers your birthday.",                   greeting:'"Hello dear! How\'s your mum? I brought you some chutney."',        flavor:"regular",     mood:1, avatar:"🌸", badge:{label:"REGULAR",      bg:"#162a1e",color:"#72c992",border:"#4a9e6b"}},
+  {name:"Big Gary",     tag:"Intimidating",      desc:"Hasn't said a word. Just stares.",                                greeting:'"..."',                                                               flavor:"intimidating",mood:4, avatar:"🗿", badge:null},
+  {name:"Zoe",          tag:"Wannabe Influencer",desc:"412 followers. Films everything. Describes it as 'her brand'.",   greeting:'"This is SO going on my Stories. My audience will love this."',     flavor:"wannabe",     mood:3, avatar:"📱", badge:{label:"412 FOLLOWERS",bg:"#1e1e1a",color:"#606058",border:"#383830"}},
+  {name:"Colin",        tag:"Confused Tourist",  desc:"Map in hand, four shopping bags, deeply lost.",                  greeting:'"Excusa me — is zees... ze supermarché? No? Ah. Bon."',             flavor:"tourist",     mood:2, avatar:"🗺️", badge:{label:"TOURIST",      bg:"#0e1f32",color:"#7ab0e0",border:"#3a6fa8"}},
+  {name:"Beryl",        tag:"Bargain Hunter",    desc:"Wants a discount on everything including air.",                   greeting:'"I saw this exact same thing online for literally 2p."',            flavor:"bargain",     mood:3, avatar:"🏷️", badge:{label:"HAGGLER",      bg:"#2e1f06",color:"#eba84a",border:"#c47e1a"}},
+  {name:"Raj",          tag:"In a Rush",         desc:"Double-parked outside. Sweating already.",                        greeting:'"Quick quick quick, I\'m on double yellows, PLEASE."',              flavor:"rush",        mood:3, avatar:"🏃", badge:null},
+  {name:"Lord Reginald",tag:"VIP",               desc:"Arrived in a Bentley. Expects treatment to match.",               greeting:'"I don\'t normally shop in places like this, but here we are."',   flavor:"vip",         mood:4, avatar:"🎩", badge:{label:"VIP",          bg:"#1a1030",color:"#b09ae0",border:"#6a4fa8"}},
+  {name:"Rude Roger",   tag:"Rude Regular",      desc:"Comes in every day. Has never once said please.",                 greeting:'"Oi. Cigarettes. The usual. Don\'t make me repeat myself."',       flavor:"rude",        mood:4, avatar:"🚬", badge:{label:"RUDE",         bg:"#2a1508",color:"#e08050",border:"#a06030"}},
+  // ── Unlockable customers ──
+  {name:"Donna",        tag:"Distracted Mum",    desc:"Three kids, a pushchair, and no idea what she came in for.",      greeting:'"Sorry — Jayden, PUT THAT DOWN — sorry, yes, hi, um, do you have—"', flavor:"donna",       mood:3, avatar:"👩‍👧‍👦",badge:{label:"GRADE D+",      bg:"#1e1e10",color:"#c8b84a",border:"#8a7a1a"}, unlockGrade:'D'},
+  {name:"Phil",         tag:"The Philosopher",   desc:"Semi-retired. Here for a paper. Staying for an existential crisis.",greeting:'"Tell me — do you ever wonder if a shop is just a metaphor?"',     flavor:"phil",        mood:2, avatar:"📰", badge:{label:"GRADE C+",      bg:"#1a1a2a",color:"#8a8ae0",border:"#4a4a90"}, unlockGrade:'C'},
+  {name:"Cllr Fiona",   tag:"Local Councillor",  desc:"Always campaigning. Professionally cheerful. Privately ruthless.",greeting:'"Hello! I\'m Fiona — you may have seen my leaflets?"',              flavor:"fiona",       mood:3, avatar:"📋", badge:{label:"GRADE B+",      bg:"#162a1e",color:"#72c992",border:"#4a9e6b"}, unlockGrade:'B'},
+  {name:"Chef Marco",   tag:"The Chef",           desc:"Runs the restaurant two doors down. Intense about ingredients.",  greeting:'"You. Do you have preserved lemons? Please. My risotto depends on it."',flavor:"marco",     mood:2, avatar:"👨‍🍳",badge:{label:"GRADE A+",      bg:"#2a1508",color:"#e09050",border:"#a05818"}, unlockGrade:'A'},
+  {name:"The Investor", tag:"Silent Investor",    desc:"No name. Expensive coat. Hasn't blinked.",                        greeting:'"..."',                                                               flavor:"investor",    mood:4, avatar:"🧥", badge:{label:"GRADE S+",      bg:"#1a1030",color:"#b09ae0",border:"#6a4fa8"}, unlockGrade:'S'},
+];
+
+const ACTIONS={
+  karen:[
+    {label:"Apologise Profusely", score:0, m:3,  r:-2, s:10, c:0,  txt:["She accepts. For now. You feel hollow.","Accepted, but she logs it mentally.","She nods, unsatisfied. Victory to Karen."]},
+    {label:"Offer a Discount",    score:1, m:-2, r:3,  s:5,  c:-1, txt:["She takes it and STILL complains.","Pockets the saving. Not a word of thanks.","Works. Costs you. Story of your life."]},
+    {label:"Ignore Her",          score:-1,m:0,  r:-10,s:-1, c:8,  txt:["CRITICAL ERROR. Chaos erupts.","She calls your head office, your landlord, and the council.","Full meltdown. She's recruiting bystanders."]}],
+  chatty:[
+    {label:"Chat Back",           score:2, m:4,  r:8,  s:-3, c:0,  txt:["You bond over the weather. He buys extra.","You laugh together. Good for morale.","Great conversation, surprise tip."]},
+    {label:"Redirect Kindly",     score:1, m:5,  r:3,  s:2,  c:0,  txt:["Gentle but firm. He gets the hint.","He wraps up. Buys his milk.","Kind redirect works."]},
+    {label:"Zone Out",            score:0, m:2,  r:-1, s:0,  c:1,  txt:["You nod on autopilot.","He doesn't notice. Neither do you.","Time passes. He eventually leaves."]}],
+  suspicious:[
+    {label:"Show Receipts",       score:1, m:3,  r:6,  s:4,  c:0,  txt:["You show the price list. She accepts.","Proof works. She reluctantly pays.","She nods slowly. Trust earned."]},
+    {label:"Charm Her",           score:2, m:5,  r:5,  s:2,  c:0,  txt:["A genuine smile disarms her.","She warms up. Buys a newspaper too.","Charm offensive: successful."]},
+    {label:"Get Annoyed",         score:-1,m:2,  r:-6, s:5,  c:3,  txt:["Bad call. She escalates.","'I KNEW IT,' she declares.","She calls Trading Standards. Again."]}],
+  broke:[
+    {label:"Offer a Deal",        score:2, m:2,  r:9,  s:0,  c:0,  txt:["He's grateful. Word will spread.","You make less but feel great.","A small kindness. Big rep boost."]},
+    {label:"Full Price",          score:0, m:6,  r:1,  s:0,  c:0,  txt:["He scrapes together coins.","Painful but transacted.","He manages. Barely."]},
+    {label:"Suggest He Leaves",   score:-1,m:0,  r:-10,s:-1, c:4,  txt:["Brutal. He's humiliated.","Word travels fast in this area.","Cold. Your rep takes the hit."]}],
+  regular:[
+    {label:"Warm Welcome",        score:2, m:7,  r:10, s:-3, c:-1, txt:["She beams. Buys loads.","Mrs Patel is delighted. Shop feels alive.","She tells the whole street how great you are."]},
+    {label:"Normal Service",      score:1, m:5,  r:4,  s:0,  c:0,  txt:["Standard but fine.","She leaves satisfied.","No complaints. Solid."]},
+    {label:"Rush Her",            score:-1,m:4,  r:-5, s:1,  c:1,  txt:["She's hurt. You've upset a regular.","Rookie error.","She'll be back but remembers this."]}],
+  intimidating:[
+    {label:"Be Friendly",         score:1, m:5,  r:3,  s:3,  c:-1, txt:["He softens. Buys crisps.","A nod. That's as good as it gets.","Respect acknowledged."]},
+    {label:"Stay Professional",   score:1, m:5,  r:2,  s:2,  c:0,  txt:["Clean transaction. No words needed.","Works fine.","Efficient. He approves silently."]},
+    {label:"Look Nervous",        score:-1,m:4,  r:-3, s:8,  c:2,  txt:["He picks up on it.","Stress through the roof.","He's not even doing anything. You just panic."]}],
+  wannabe:[
+    {label:"Play Along",          score:-1,m:2,  r:-1, s:5,  c:3,  txt:["She posts it. Her 412 followers mostly mute her.","One person likes it. It's her mum.","It goes up. Nothing happens. She's devastated and blames you."]},
+    {label:"Ask Her to Stop",     score:-1,m:4,  r:2,  s:3,  c:4,  txt:["She calls it 'censorship'. Posts a rant instead.","'This shop is CANCELLED,' she announces to her 412 followers.","She films the argument. It gets 7 views."]},
+    {label:"Ignore Completely",   score:0, m:5,  r:1,  s:0,  c:2,  txt:["She films anyway. The content is genuinely terrible.","She leaves quietly, wounded. Posts a vague tweet.","Neutral. She mutters something about 'energy'."]}],
+  tourist:[
+    {label:"Draw a Map",          score:2, m:5,  r:8,  s:3,  c:0,  txt:["He buys half the shop in gratitude. Bless.","He photographs your map. You're on Google now.","Touched by your kindness. Five stars in French."]},
+    {label:"Point & Mime",        score:1, m:4,  r:4,  s:2,  c:1,  txt:["Mostly works. Some confusion about crisps.","He gets there. Eventually.","Universal language of pointing. Effective."]},
+    {label:"Just Stare",          score:-1,m:2,  r:-5, s:0,  c:2,  txt:["He wanders off looking hurt.","Tragic. He'll tell people British shopkeepers are cold.","He leaves empty-handed and slightly tearful."]}],
+  bargain:[
+    {label:"Offer 10% Off",       score:1, m:3,  r:7,  s:1,  c:0,  txt:["She's overjoyed. Buys double. Net win.","A deal struck. She's happy.","Works. She even says thank you."]},
+    {label:"Hold Firm",           score:0, m:7,  r:-2, s:3,  c:1,  txt:["She grudgingly pays full price.","Tension. But you hold the line.","Not happy, but pays."]},
+    {label:"Outbargain Her",      score:2, m:9,  r:5,  s:2,  c:0,  txt:["She blinks. You win. Mutual respect.","She actually respects the hustle.","Counter-offer accepted. An icon."]}],
+  rush:[
+    {label:"Prioritise Him",      score:1, m:6,  r:5,  s:4,  c:1,  txt:["He sprints out grateful.","Quick win. Others grumble.","He waves from his car. Success."]},
+    {label:"Queue Like Others",   score:0, m:5,  r:1,  s:0,  c:0,  txt:["He waits impatiently. Manages.","Fair is fair.","He taps his foot but accepts it."]},
+    {label:"Slow Down Deliberately",score:-1,m:4,r:-5, s:-1, c:4,  txt:["He's fuming. Car gets a ticket.","Chaos on the street.","Petty. But kind of funny."]}],
+  vip:[
+    {label:"Roll Out Red Carpet", score:2, m:22, r:8,  s:2,  c:0,  txt:["He tips extravagantly. Tells his club about you.","Delighted. Buys champagne and scratch cards.","A glowing review and a £20 note on the counter."]},
+    {label:"Normal Service",      score:0, m:10, r:2,  s:0,  c:1,  txt:["He expected more. Pays grudgingly.","Underwhelmed but civil.","Serviceable. He won't be back."]},
+    {label:"Ignore Him",          score:-1,m:0,  r:-8, s:0,  c:3,  txt:["He sweeps out. You lose a whale.","Cold fury. He Yelps you immediately.","Catastrophic. He knows people."]}],
+  rude:[
+    {label:"Serve & Ignore Attitude",score:0,m:6, r:2,  s:4,  c:0,  txt:["Transaction complete. Dignity: dented.","You survive. He grunts.","Fine. Just fine."]},
+    {label:"Call It Out",         score:1, m:4,  r:5,  s:-3, c:2,  txt:["He blinks. Nobody's ever done that.","Tense standoff. He backs down slightly.","You feel great. He does not."]},
+    {label:"Match His Energy",    score:-1,m:3,  r:-4, s:2,  c:5,  txt:["Full chaos. The queue is watching.","A scene. Loud. Undignified.","Someone films it. You both look bad."]}],
+  donna:[
+    {label:"Help Her Find It",    score:1, m:5,  r:4,  s:3,  c:0,  txt:["She eventually remembers. Buys three things she didn't need.","You help her focus. The kids help less.","Appreciated. She'll definitely be back."]},
+    {label:"Let Her Browse",      score:0, m:3,  r:2,  s:2,  c:1,  txt:["She wanders for fifteen minutes. Buys something random.","The kids knock over the crisps. She apologises profusely.","Gentle chaos. Everyone survives."]},
+    {label:"Rush Her Along",      score:-1,m:4,  r:-3, s:1,  c:2,  txt:["She looks wounded. The children look at you with silent judgement.","She leaves quickly. You feel like a monster.","Efficient but unkind."]}],
+  phil:[
+    {label:"Engage Him",          score:2, m:6,  r:8,  s:6,  c:0,  txt:["He holds court for twenty minutes. Six people hear him praise you.","'The last real shopkeeper,' he announces to no one in particular.","He buys the paper and leaves you with something to think about. Unfortunately."]},
+    {label:"Nod Along",           score:0, m:4,  r:2,  s:2,  c:0,  txt:["You achieve a kind of zen through non-comprehension.","He seems satisfied. You survive.","Works fine. Philosophy averted."]},
+    {label:"Ignore Him",          score:0, m:4,  r:0,  s:0,  c:0,  txt:["He buys his paper and leaves, visibly unbothered.","No harm done. Some opportunity missed.","Neutral. The universe remains unexplained."]}],
+  fiona:[
+    {label:"Support Her Campaign",score:2, m:4,  r:12, s:2,  c:-2, txt:["She puts a leaflet in your window. The street looks tidier within days.","'You have my full support,' she says, meaning it more than she should.","Chaos drops. Rep soars. You're not sure what you've agreed to."]},
+    {label:"Smile and Nod",       score:0, m:5,  r:3,  s:1,  c:0,  txt:["Clean transaction. You commit to nothing.","She accepts this. She's used to it.","Fine. Professionally fine."]},
+    {label:"Argue About Planning",score:-1,m:3,  r:-8, s:4,  c:3,  txt:["She takes notes. You have now been added to a list.","'I see,' she says, in a way that means the opposite.","The planning office will be hearing about the skip out front."]}],
+  marco:[
+    {label:"You Have It",         score:2, m:16, r:8,  s:1,  c:0,  txt:["He cradles the jar like an infant. Pays double without hesitation.","'You saved the tasting menu.' He means it. Three diners will thank you unknowingly.","He sends his sous chef the next day. And the day after."]},
+    {label:"You're Out of Stock",  score:-1,m:2, r:-3, s:2,  c:1,  txt:["His face does something complicated. He buys olive oil and leaves in silence.","'No matter.' It clearly matters.","He'll try the supermarket. The betrayal is quiet but total."]},
+    {label:"Suggest a Substitute", score:0,m:6,  r:2,  s:1,  c:0,  txt:["He considers it. Accepts. You have entered into a professional relationship.","He nods slowly. This might work. Maybe.","A compromise reached. Dignity preserved on both sides."]}],
+  investor:[
+    {label:"Welcome Him Quietly", score:2, m:30, r:4,  s:0,  c:0,  txt:["He places a card on the counter. No name. A very large number.","The transaction takes forty seconds. The money takes your breath away.","He leaves without another word. Your till has never looked healthier."]},
+    {label:"Make Small Talk",     score:0, m:8,  r:2,  s:3,  c:1,  txt:["He answers in single words. You learn nothing. He buys sparkling water.","'Interesting,' he says. You don't know what he means.","Neutral. He was here. Now he isn't."]},
+    {label:"Ask Him to Leave",    score:-1,m:0,  r:-6, s:2,  c:8,  txt:["He pauses at the door. 'I own three properties on this street.' He leaves.","You will think about this moment for a long time.","The estate agent calls the next morning. You don't know why yet."]}],
+};
+
+const EVENTS=[
+  {id:"health_inspector",kicker:"Health Inspection",  title:"Health inspector arrives",              desc:"A man in high-vis is scrutinising your crisps display with a clipboard and a look of quiet personal betrayal.",                   choices:[{label:"Cooperate Fully",        m:-5, r:6, s:8, c:-2,txt:"Solid rating. Only docked for a questionable sausage roll."},{label:"Bribe Him",              m:-15,r:0, s:3, c:4, txt:"He pockets the cash. Comes back next week. This is your life now."}]},
+  {id:"till_broken",     kicker:"Technical Failure",  title:"Till has broken down",                  desc:"The till makes a sound like a dying seagull and goes black. A queue is forming. Someone sighs audibly.",                          choices:[{label:"Mental Maths",           m:4,  r:3, s:12,c:2, txt:"You make it work. Just about. Your eye is twitching."},{label:"Card Only Sign",         m:-3, r:-2,s:2, c:3, txt:"Half the queue leaves. Cash customers are furious."}]},
+  {id:"delivery",        kicker:"Logistics Crisis",   title:"Massive delivery arrives",              desc:"A lorry has double-parked. The driver needs 47 boxes signed for RIGHT NOW. He has a very specific trolley technique.",             choices:[{label:"Handle It Yourself",     m:8,  r:2, s:10,c:1, txt:"Stock levels restored. Your back disagrees with this decision."},{label:"Ask Customer to Wait", m:6,  r:-4,s:5, c:3, txt:"They do not wait. Three of them leave."}]},
+  {id:"pigeon",          kicker:"Pigeon Infestation", title:"Pigeons have entered the shop",         desc:"Nobody knows how. There are now three of them. One is on the bread. One is watching you. One has simply vanished.",                choices:[{label:"Heroic Shooing",         m:0,  r:4, s:6, c:2, txt:"Twenty minutes later they're mostly gone. Your dignity is not."},{label:"Accept Your Fate",      m:-3, r:-2,s:-3,c:6, txt:"Customers are equally delighted and horrified. One lays an egg on the Hobnobs."}]},
+  {id:"local_paper",     kicker:"Media Opportunity",  title:"Local paper wants a photo",             desc:"'Corner shop cheer!' She wants you smiling with a loaf of bread like you've just won something.",                                  choices:[{label:"Pose Proudly",           m:0,  r:10,s:2, c:0, txt:"You're on page 6. Mrs Patel buys twelve copies."},{label:"Decline",                m:0,  r:-3,s:0, c:1, txt:"She uses a Google Street View photo. You look baffled in it."}]},
+  {id:"power_cut",       kicker:"Power Cut",          title:"Everything just went dark",             desc:"The fridge hums its last breath. The shop is lit only by phone torches, existential dread, and one emergency Twix.",               choices:[{label:"Sell by Candlelight",    m:5,  r:8, s:6, c:2, txt:"Customers find it oddly charming. You sell out of candles."},{label:"Close Up Early",        m:-8, r:-2,s:-4,c:1, txt:"You go home. The ice cream melts. A small private tragedy."}]},
+  {id:"rival_shop",      kicker:"Rival Shop Opens",   title:"New minimart opening across the road",  desc:"It has self-checkout, mood lighting, and a loyalty app. It also sells artisan air freshener. It is a threat.",                     choices:[{label:"Double Down on Service", m:0,  r:8, s:4, c:0, txt:"Loyalty wins. Your regulars aren't going anywhere."},{label:"Panic Price Everything", m:-6, r:2, s:7, c:2, txt:"You undercut them. Margins are now theoretical."}]},
+  {id:"flash_sale",      kicker:"Flash Sale Frenzy",  title:"Flash sale — word got out somehow",     desc:"You mentioned 10% off to one person. ONE. The queue is now out the door. Beryl has brought a trolley. Nobody knows where she got the trolley.", choices:[{label:"Honour the Sale",m:-8,r:12,s:10,c:3,txt:"Reputation soars. Wallet weeps. Beryl leaves with seventeen tins of beans."},{label:"Quietly Cancel It",m:6,r:-7,s:3,c:5,txt:"The crowd turns. Beryl is not pleased. There is a scene involving the trolley."}]},
+  {id:"celebrity",       kicker:"Celebrity Sighting", title:"A genuinely famous person just walked in",desc:"Three million followers. Verified tick. Sunglasses indoors. They want a Cornetto and they're already holding their phone up.", choices:[{label:"Welcome Them Warmly",m:15,r:18,s:4,c:1,txt:"They post it. 'Hidden gem!' Your shop gets 4,000 profile visits before closing time."},{label:"Treat Them Normally",m:8,r:6,s:0,c:0,txt:"They respect it. Post a tasteful story. A quiet win."}]},
+];
+
+const FLAVOUR={
+  stress:[
+    [80,["The shop smells like despair.","Your hands are shaking slightly.","You've forgotten what calm feels like.","The tick of the clock is deafening.","Every customer is a final boss today."]],
+    [60,["You're on your third coffee.","Someone left a passive-aggressive note by the till.","The queue is moving at the speed of grief.","A low hum of dread fills the air."]],
+    [30,["Ticking along, just about.","The ambient stress is manageable.","Coping, technically."]],
+    [0, ["Things are ticking along.","Remarkably normal day.","You hum quietly to yourself.","Birds are singing. Probably.","A customer smiled. Today is good."]]
+  ],
+  chaos:[
+    [18,["Something is genuinely wrong.","The shop has an energy today.","Customers can sense the chaos. They like it.","It's fine. Everything is fine."]],
+    [10,["There's a low hum of disorder.","Two people are arguing near the biscuits.","Something got knocked over. Nobody's sure what."]],
+    [0, ["All quiet on the crisp front.","The shelves are basically straight.","A normal amount of confusion."]]
+  ]
+};
+
+const GRADES=[
+  {min:90, grade:'S+', color:'#eba84a', label:'Legendary Shopkeeper',  cert:["Trading Standards called. Not to complain — to offer you a job.","The Queen herself popped in for milk. She was charmed.","Even Karen left a five-star review. We're not sure how to process that."]},
+  {min:75, grade:'S',  color:'#72c992', label:'Master Retailer',       cert:["Local legend. Dave has named his new dog after you.","Your shop is the subject of a five-star documentary on Channel 4. The working title is 'Miracles'.","Your laminated till receipts are being studied at business school."]},
+  {min:60, grade:'A',  color:'#7ab0e0', label:'Accomplished Shopkeeper',cert:["A solid run. The pigeons seem respectful now.","You ran a good ship. No fires, literal or otherwise.","Mrs Patel cried when she heard. Happy tears. Mostly."]},
+  {min:45, grade:'B',  color:'#b09ae0', label:'Competent Operator',    cert:["Not bad. Not great. Somewhere in the comfortable middle.","You survived. That's more than most. Well done.","A brave attempt. The till made it. The sausage roll did not."]},
+  {min:30, grade:'C',  color:'var(--text2)', label:'Getting By',       cert:["You kept the lights on. Mostly. The fridge is questionable.","Dave's still coming in, so you can't have done that badly.","The health inspector gave you a two. Out of ten."]},
+  {min:15, grade:'D',  color:'var(--amber-text)', label:'Struggling',  cert:["Somehow you're still open. It's a miracle, frankly.","The pigeons have a better reputation than you at this point.","Local residents have started calling it 'The Vibe Shop'. Not a compliment."]},
+  {min:0,  grade:'F',  color:'var(--red-text)',   label:'Catastrophic Failure', cert:["The building is now used as a cautionary tale in retail training courses.","Beryl wept. Not from sadness — from laughter.","A pigeon has taken over the shop. She's doing better than you did."]},
+];
+
+// ─── Runtime state ─────────────────────────────────────────────────────────
+let selectedDiff='normal';
+let state={money:50,rep:50,stress:10,chaos:0,turn:1};
+let prevState={money:50,rep:50,stress:10,chaos:0};
+let sp={karenIgnoreCount:0,vipVisits:0,touristHelpCount:0,visits:{dave:0,edna:0,beryl:0,raj:0}};
+let ownedUpgrades=new Set();
+let cur=null,curAct=null,acted=false,evQ=[],nextEvIn=3;
+let shopName='',shopTagline='',currentDiff='normal';
+let upgradesPanelOpen=false;
+let suppliesPanelOpen=false;
+let daySnapshot={money:50,rep:50,turn:1};
+let lastEodTurn=-1;
+let milestoneTriggered=new Set();
+let pushedOn=false;
+let investorBonus=0;
+
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function jitter(n){return n+Math.floor(Math.random()*3)-1;}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function rndBetween(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+
+// Apply difficulty multipliers to a stat delta
+function applyDiff(dm,dr,ds,dc){
+  const d=DIFFICULTY[currentDiff];
+  return{dm:Math.round(dm*d.moneyMult),dr,ds:Math.round(ds*d.stressMult),dc:Math.round(dc*d.chaosMult)};
+}
+
+// ─── Difficulty selector ───────────────────────────────────────────────────
+function selectDiff(d){
+  selectedDiff=d;
+  document.querySelectorAll('.diff-btn').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('diff-'+d).classList.add('selected');
+}
+
+// ─── Shop name ─────────────────────────────────────────────────────────────
+function initShopName(){
+  const pair=pick(SHOP_NAMES); shopName=pair[0]; shopTagline=pair[1];
+  document.getElementById('shop-name').textContent=pair[0];
+  document.getElementById('shop-tagline').textContent=pair[1];
+}
+
+// ─── Start / restart ───────────────────────────────────────────────────────
+function startGame(){
+  currentDiff=selectedDiff;
+  const d=DIFFICULTY[currentDiff];
+  state={money:d.startMoney,rep:50,stress:10,chaos:0,turn:1};
+  prevState={...state};
+  sp={karenIgnoreCount:0,vipVisits:0,touristHelpCount:0,visits:{dave:0,edna:0,beryl:0,raj:0}};
+  ownedUpgrades=new Set();
+  evQ=[]; nextEvIn=rndBetween(d.eventFreqMin,d.eventFreqMax);
+  upgradesPanelOpen=false;
+  suppliesPanelOpen=false;
+  // Snapshot for end-of-day delta tracking
+  daySnapshot={money:d.startMoney,rep:50,turn:1};
+  lastEodTurn=-1;
+  milestoneTriggered=new Set();
+  pushedOn=false;
+  pendingRewardAt=null;
+  investorBonus=0;
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('game-screen').style.display='block';
+  document.getElementById('gameover').style.display='none';
+  document.getElementById('game-wrap').style.display='block';
+  document.getElementById('outcome-box').style.display='none';
+  document.getElementById('milestone-card').style.display='none';
+  document.getElementById('win-card').style.display='none';
+  document.getElementById('main-play').style.display='block';
+  document.getElementById('event-card').style.display='none';
+  document.getElementById('eod-card').style.display='none';
+  document.getElementById('log-entries').innerHTML='';
+  logExpanded=false;
+  const logEnt=document.getElementById('log-entries');
+  if(logEnt){logEnt.className='log-entries';}
+  const logChev=document.getElementById('log-chevron');
+  if(logChev){logChev.className='log-chevron';}
+  const logFade=document.getElementById('log-fade');
+  if(logFade){logFade.className='log-fade';}
+  hideBanner();
+  // diff pill
+  const pill=document.getElementById('diff-pill');
+  pill.textContent=d.label.toLowerCase();
+  pill.className='diff-pill '+currentDiff;
+  initShopName(); renderUpgrades(); updateStats();
+  scheduleEvent(); scheduleEvent();
+  nextCustomer();
+}
+
+function restartGame(){
+  startGame();
+}
+
+function goToStart(){
+  document.getElementById('game-screen').style.display='none';
+  document.getElementById('start-screen').style.display='block';
+  renderLeaderboard('lb-start-rows');
+  renderStatPills('lb-stat-pills');
+  renderUnlockRoster();
+}
+
+// ─── Stats display ─────────────────────────────────────────────────────────
+function getFlavour(s){
+  const useChaos=s.chaos>s.stress/3;
+  const src=useChaos?FLAVOUR.chaos:FLAVOUR.stress,val=useChaos?s.chaos:s.stress;
+  for(const[t,lines]of src){if(val>=t)return pick(lines);}
+  return '';
+}
+function getDayTime(turn){
+  const totalMins=(turn-1)*30,dayMins=10*60;
+  const day=DAYS[Math.floor(totalMins/dayMins)%7];
+  const minsInDay=8*60+(totalMins%dayMins);
+  const h=Math.floor(minsInDay/60),m=minsInDay%60;
+  const ampm=h>=12?'pm':'am',h12=h>12?h-12:h===0?12:h;
+  return `${day} · ${h12}:${m.toString().padStart(2,'0')}${ampm}`;
+}
+
+function updateStats(){
+  state.money=Math.max(0,state.money);state.rep=clamp(state.rep,0,100);
+  state.stress=clamp(state.stress,0,100);state.chaos=Math.max(0,state.chaos);
+  const fields=[
+    {id:'stat-money',cell:'cell-money',val:'£'+state.money,cur:state.money,prev:prevState.money,dangerAt:10,warnAt:20,low:true},
+    {id:'stat-rep',  cell:'cell-rep',  val:state.rep,       cur:state.rep,  prev:prevState.rep,  dangerAt:15,warnAt:30,low:true},
+    {id:'stat-stress',cell:'cell-stress',val:state.stress,  cur:state.stress,prev:prevState.stress,dangerAt:80,warnAt:60,low:false},
+    {id:'stat-chaos', cell:'cell-chaos', val:state.chaos,   cur:state.chaos, prev:prevState.chaos, dangerAt:18,warnAt:12,low:false},
+  ];
+  fields.forEach(f=>{
+    const el=document.getElementById(f.id);
+    el.textContent=f.val;
+    const isDanger=f.low?f.cur<=f.dangerAt:f.cur>=f.dangerAt;
+    const isWarn=f.low?f.cur<=f.warnAt:f.cur>=f.warnAt;
+    el.className='stat-val'+(isDanger?' danger':isWarn?' warn':'');
+    if(f.cur!==f.prev){
+      el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),400);
+      if(isDanger){const cell=document.getElementById(f.cell);cell.classList.add('pulsed');setTimeout(()=>cell.classList.remove('pulsed'),600);}
+    }
+  });
+  prevState={...state};
+  document.getElementById('turn-num').textContent=state.turn;
+  document.getElementById('day-time').textContent=getDayTime(state.turn);
+  const fl=document.getElementById('flavour-line'),fb=document.getElementById('flavour-bar');
+  fl.textContent=getFlavour(state);
+  fb.className='flavour-bar'+(state.stress>=80?' stressed':state.stress>=50?' busy':'');
+  updateProgressBar();
+}
+
+// ─── Upgrades ──────────────────────────────────────────────────────────────
+function toggleUpgrades(){
+  upgradesPanelOpen=!upgradesPanelOpen;
+  document.getElementById('upgrade-panel').style.display=upgradesPanelOpen?'block':'none';
+  if(upgradesPanelOpen){
+    if(suppliesPanelOpen){suppliesPanelOpen=false;document.getElementById('supplies-panel').style.display='none';}
+    renderUpgrades();
+  }
+}
+
+function renderUpgrades(){
+  const grid=document.getElementById('upgrade-grid');
+  grid.innerHTML='';
+  UPGRADES.forEach(upg=>{
+    const owned=ownedUpgrades.has(upg.id);
+    const cantAfford=!owned&&state.money-upg.cost<=0;
+    const div=document.createElement('div');
+    div.className='upgrade-card'+(owned?' owned':cantAfford?' cant-afford':'');
+    div.innerHTML=`<div class="upg-name">${upg.icon} ${upg.name}</div><div class="upg-effect">${upg.effect}</div><div class="upg-footer"><span class="upg-cost">${owned?'':'£'+upg.cost}</span><span class="upg-owned-tag">${owned?'✓ Installed':''}</span></div>`;
+    if(!owned&&!cantAfford) div.onclick=()=>buyUpgrade(upg.id);
+    grid.appendChild(div);
+  });
+}
+
+function buyUpgrade(id){
+  const upg=UPGRADES.find(u=>u.id===id);
+  if(!upg||ownedUpgrades.has(id))return;
+  // Block purchase if it would zero or bust money — must keep at least £1
+  if(state.money-upg.cost<=0){
+    showBanner(`Can't afford ${upg.name} — you'd have nothing left.`,'var(--red-dim)','var(--red-text)','var(--red)',true);
+    return;
+  }
+  state.money-=upg.cost;
+  ownedUpgrades.add(id);
+  upg.onBuy(state);
+  updateStats();
+  renderUpgrades();
+  // Close panel before checking game-over so the screen renders cleanly
+  upgradesPanelOpen=false;
+  document.getElementById('upgrade-panel').style.display='none';
+  const go=checkGO();
+  if(go){
+    setTimeout(()=>triggerGO(go),200);
+    return;
+  }
+  showBanner(`${upg.icon} ${upg.name} installed! ${upg.effect}`,'var(--amber-dim)','var(--amber-text)','var(--amber)',true);
+}
+
+function applyUpgradePerTurn(){
+  ownedUpgrades.forEach(id=>{
+    const upg=UPGRADES.find(u=>u.id===id);
+    if(upg)upg.perTurn(state);
+  });
+  if(investorBonus>0) state.money+=investorBonus;
+}
+
+// ─── Supplies ──────────────────────────────────────────────────────────────
+function toggleSupplies(){
+  suppliesPanelOpen=!suppliesPanelOpen;
+  document.getElementById('supplies-panel').style.display=suppliesPanelOpen?'block':'none';
+  if(suppliesPanelOpen){
+    if(upgradesPanelOpen){upgradesPanelOpen=false;document.getElementById('upgrade-panel').style.display='none';}
+    renderSupplies();
+  }
+}
+
+function renderSupplies(){
+  const grid=document.getElementById('supplies-grid');
+  grid.innerHTML='';
+  CONSUMABLES.forEach(c=>{
+    const cantAfford=state.money-c.cost<=0;
+    const div=document.createElement('div');
+    div.className='supply-card'+(cantAfford?' cant-afford':'');
+    div.innerHTML=`<span class="supply-icon">${c.icon}</span><div class="supply-name">${c.name}</div><div class="supply-effect">${c.effect}</div><div class="supply-cost">£${c.cost}</div>`;
+    if(!cantAfford) div.onclick=()=>buySupply(c.id);
+    grid.appendChild(div);
+  });
+}
+
+function buySupply(id){
+  const c=CONSUMABLES.find(s=>s.id===id);
+  if(!c)return;
+  if(state.money-c.cost<=0){
+    showBanner(`Can't afford ${c.name} — you'd be penniless.`,'var(--red-dim)','var(--red-text)','var(--red)',true);
+    return;
+  }
+  state.money-=c.cost;
+  if(c.stat==='stress') state.stress=clamp(state.stress+c.delta,0,100);
+  else if(c.stat==='rep') state.rep=clamp(state.rep+c.delta,0,100);
+  else if(c.stat==='chaos') state.chaos=Math.max(0,state.chaos+c.delta);
+  updateStats();
+  renderSupplies();
+  showBanner(`${c.icon} ${c.name}: ${c.quip}`,'var(--surface2)','var(--text2)','var(--border)',true);
+}
+
+// ─── Visit-counter mechanics ────────────────────────────────────────────────
+// Returns {greeting, actionOverrides} for customers with enough visits
+// actionOverrides: {index: {txt:[...], extraDm, extraDr}} — applied in doAction
+function getVisitOverrides(flavor){
+  const v=sp.visits;
+  if(flavor==='chatty'&&v.dave>=3){
+    return{
+      greeting:'"Right, so where was I — yes, the caravan. Anyway, the SECOND week..."',
+      actionOverride:{0:{bonus:'dr',val:3,note:' (Dave\'s loyalty pays off — +3 extra Rep.)'}}
+    };
+  }
+  if(flavor==='suspicious'&&v.edna>=3){
+    return{
+      greeting:'"Oh, it\'s you. I suppose... I suppose you\'re alright, actually."',
+      actionOverride:{1:{bonus:'dr',val:4,note:' Edna trusts you now. Rare. Precious.'}}
+    };
+  }
+  if(flavor==='bargain'&&v.beryl>=3){
+    return{
+      greeting:'"I\'ve been telling everyone about this place. You\'re practically family."',
+      actionOverride:{2:{bonus:'dm',val:4,note:' Beryl slips you a cut. Old friends price.'}}
+    };
+  }
+  if(flavor==='rush'&&v.raj>=3){
+    return{
+      greeting:'"You always sort me out. You\'re a lifesaver. Seriously."',
+      actionOverride:{0:{bonus:'ds',val:-4,note:' Raj\'s gratitude is weirdly calming. -4 Stress.'}}
+    };
+  }
+  return null;
+}
+function showBanner(msg,bg,color,border,auto){
+  const b=document.getElementById('special-banner');
+  b.textContent=msg;b.style.display='block';b.style.background=bg;b.style.color=color;b.style.borderColor=border||'transparent';
+  if(auto)setTimeout(()=>{b.style.display='none';},3200);
+}
+function hideBanner(){document.getElementById('special-banner').style.display='none';}
+
+// ─── Grading ───────────────────────────────────────────────────────────────
+function calcScore(s,turns){
+  // Weighted score out of 100: money matters, rep matters most, stress/chaos penalise
+  const moneyScore=Math.min(40,Math.round(s.money/3));
+  const repScore=Math.min(40,Math.round(s.rep*0.4));
+  const stressPenalty=Math.round(s.stress*0.15);
+  const chaosPenalty=Math.round(s.chaos*0.5);
+  const turnBonus=Math.min(20,Math.round(turns/2));
+  return Math.max(0,moneyScore+repScore+turnBonus-stressPenalty-chaosPenalty);
+}
+
+function getGrade(score){
+  for(const g of GRADES){if(score>=g.min)return g;}
+  return GRADES[GRADES.length-1];
+}
+
+// ─── Leaderboard + meta stats ──────────────────────────────────────────────
+const LB_KEY='cornershop_lb_v1';
+const META_KEY='cornershop_meta_v1';
+
+const GRADE_ORDER=['F','D','C','B','A','S','S+'];
+function gradeRank(g){return GRADE_ORDER.indexOf(g);}
+
+// ─── Unlock system ─────────────────────────────────────────────────────────
+const UNLOCK_KEY='cornershop_unlocks_v1';
+const UNLOCK_STREAK_MAX=5;
+
+// Unlockable customer definitions (subset of CUSTOMERS with unlockGrade)
+const UNLOCKABLE_CUSTOMER_IDS=['donna','phil','fiona','marco','investor'];
+const UNLOCK_HINTS={
+  donna:   'A mum with a pushchair. Grade D required.',
+  phil:    'Seen near the philosophy section. Grade C required.',
+  fiona:   'Campaigning outside. Grade B required.',
+  marco:   'Asking about preserved lemons. Grade A required.',
+  investor:'An expensive coat. No name. Grade S required.',
+};
+
+function loadUnlocks(){
+  try{return JSON.parse(localStorage.getItem(UNLOCK_KEY))||{};}catch(e){return{};}
+}
+function saveUnlocks(u){
+  try{localStorage.setItem(UNLOCK_KEY,JSON.stringify(u));}catch(e){}
+}
+
+function updateUnlocks(grade){
+  const rank=gradeRank(grade);
+  const u=loadUnlocks();
+  const unlockableCustomers=CUSTOMERS.filter(c=>c.unlockGrade);
+  unlockableCustomers.forEach(c=>{
+    const req=gradeRank(c.unlockGrade);
+    const entry=u[c.flavor]||{unlocked:false,streak:0};
+    if(rank>=req){
+      // Met or exceeded grade requirement
+      entry.unlocked=true;
+      entry.streak=UNLOCK_STREAK_MAX; // reset to full
+    } else if(entry.unlocked){
+      // Was unlocked but didn't meet grade this run
+      entry.streak=Math.max(0,(entry.streak||UNLOCK_STREAK_MAX)-1);
+      if(entry.streak<=0) entry.unlocked=false; // lost
+    }
+    u[c.flavor]=entry;
+  });
+  saveUnlocks(u);
+}
+
+function getUnlockedFlavors(){
+  const u=loadUnlocks();
+  return UNLOCKABLE_CUSTOMER_IDS.filter(id=>u[id]&&u[id].unlocked);
+}
+
+function buildCustomerPool(){
+  const unlocked=getUnlockedFlavors();
+  return CUSTOMERS.filter(c=>!c.unlockGrade||unlocked.includes(c.flavor));
+}
+
+function loadMeta(){
+  try{return JSON.parse(localStorage.getItem(META_KEY))||{totalRuns:0,bestTurns:0,bestGrade:'F'};}
+  catch(e){return{totalRuns:0,bestTurns:0,bestGrade:'F'};}
+}
+
+function saveMeta(m){
+  try{localStorage.setItem(META_KEY,JSON.stringify(m));}catch(e){}
+}
+
+function loadLeaderboard(){
+  try{return JSON.parse(localStorage.getItem(LB_KEY))||[];}catch(e){return[];}
+}
+
+function saveToLeaderboard(entry){
+  // Update leaderboard
+  let lb=loadLeaderboard();
+  lb.push(entry);
+  lb.sort((a,b)=>b.score-a.score);
+  lb=lb.slice(0,5);
+  try{localStorage.setItem(LB_KEY,JSON.stringify(lb));}catch(e){}
+
+  // Update meta + detect personal bests
+  const meta=loadMeta();
+  const pbs=[];
+  meta.totalRuns=(meta.totalRuns||0)+1;
+  if(entry.turn>(meta.bestTurns||0)){meta.bestTurns=entry.turn;pbs.push('bestTurns');}
+  if(gradeRank(entry.grade)>gradeRank(meta.bestGrade||'F')){meta.bestGrade=entry.grade;pbs.push('bestGrade');}
+  if(lb[0]&&entry.score>=lb[0].score&&meta.totalRuns>1){pbs.push('bestScore');}
+  saveMeta(meta);
+  return pbs;
+}
+
+function gradeColor(grade){
+  const g=GRADES.find(x=>x.grade===grade);
+  return g?g.color:'var(--text2)';
+}
+
+function renderLeaderboard(containerId){
+  const lb=loadLeaderboard();
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  if(lb.length===0){el.innerHTML='<div class="lb-empty">No runs yet. Be the first legend.</div>';return;}
+  el.innerHTML=lb.map((r,i)=>`
+    <div class="lb-row">
+      <span class="lb-rank">${['🥇','🥈','🥉','4.','5.'][i]||i+1+'.'}</span>
+      <span class="lb-name">${r.shop}</span>
+      <span class="lb-score">${r.score}pts</span>
+      <span class="lb-grade" style="color:${gradeColor(r.grade)}">${r.grade}</span>
+    </div>`).join('');
+}
+
+function renderStatPills(containerId){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const meta=loadMeta();
+  if(!meta.totalRuns){el.innerHTML='';return;}
+  el.innerHTML=`
+    <span class="stat-pill"><strong>${meta.totalRuns}</strong> run${meta.totalRuns!==1?'s':''}</span>
+    <span class="stat-pill">Best: <strong>${meta.bestTurns}</strong> turns</span>
+    <span class="stat-pill">Top grade: <strong style="color:${gradeColor(meta.bestGrade)}">${meta.bestGrade}</strong></span>`;
+}
+
+function renderUnlockRoster(){
+  const el=document.getElementById('unlock-roster');
+  if(!el)return;
+  const u=loadUnlocks();
+  const rows=CUSTOMERS.filter(c=>c.unlockGrade).map(c=>{
+    const entry=u[c.flavor]||{unlocked:false,streak:0};
+    if(entry.unlocked){
+      const streakLeft=entry.streak||UNLOCK_STREAK_MAX;
+      const streakPill=streakLeft<UNLOCK_STREAK_MAX
+        ?`<span class="unlock-streak">${streakLeft} run${streakLeft!==1?'s':''} to keep</span>`
+        :`<span class="unlock-grade-req">Secure</span>`;
+      return`<div class="unlock-row">
+        <span class="unlock-avatar">${c.avatar}</span>
+        <div class="unlock-info">
+          <div class="unlock-name">${c.name} <span style="font-size:9px;color:var(--text3);font-weight:400;font-style:italic">${c.tag}</span></div>
+          <div class="unlock-hint">${c.desc}</div>
+        </div>
+        ${streakPill}
+      </div>`;
+    } else {
+      return`<div class="unlock-row">
+        <span class="unlock-avatar locked">▓</span>
+        <div class="unlock-info">
+          <div class="unlock-name" style="color:var(--text3)">???</div>
+          <div class="unlock-hint">${UNLOCK_HINTS[c.flavor]}</div>
+        </div>
+        <span class="unlock-grade-req">Grade ${c.unlockGrade}+</span>
+      </div>`;
+    }
+  }).join('');
+  el.innerHTML=`<div class="unlock-roster">${rows}</div>`;
+}
+
+// ─── Game over ─────────────────────────────────────────────────────────────
+function checkGO(){
+  if(state.money<=0)    return{icon:'💸',title:'Bankrupt.',           reason:'You ran out of money.',           flavour:'The bailiffs were actually quite polite about it.'};
+  if(state.stress>=100) return{icon:'🤯',title:'Complete breakdown.', reason:'Stress hit 100.',                 flavour:'You locked the door, sat on the floor, and ate a Twix.'};
+  if(state.chaos>=25)   return{icon:'🔥',title:'Total chaos.',        reason:'The shop descended into anarchy.',flavour:'Last seen: a pigeon wearing your name badge.'};
+  if(state.rep<=0)      return{icon:'💀',title:'Reputation destroyed.',reason:'Nobody trusts you anymore.',     flavour:'Even Dave stopped coming in. Dave.'};
+  return null;
+}
+
+function triggerGO(r){
+  document.getElementById('game-wrap').style.display='none';
+  const go=document.getElementById('gameover');go.style.display='block';
+  document.getElementById('go-icon').textContent=r.icon;
+  document.getElementById('go-title').textContent=r.title;
+  document.getElementById('go-reason').textContent=r.reason;
+  document.getElementById('go-flavour').textContent=r.flavour;
+  const score=calcScore(state,state.turn-1);
+  const g=getGrade(score);
+  document.getElementById('grade-letter').textContent=g.grade;
+  document.getElementById('grade-letter').style.color=g.color;
+  document.getElementById('grade-label').textContent=g.label;
+  document.getElementById('grade-cert-text').textContent=pick(g.cert);
+  document.getElementById('go-stats').innerHTML=
+    `${shopName} ${shopTagline} &nbsp;·&nbsp; ${DIFFICULTY[currentDiff].label}<br>`+
+    `Turn ${state.turn-1} &nbsp;·&nbsp; £${state.money} &nbsp;·&nbsp; Rep: ${state.rep} &nbsp;·&nbsp; Stress: ${state.stress} &nbsp;·&nbsp; Chaos: ${state.chaos}<br>`+
+    `Score: <strong style="color:${g.color}">${score} pts</strong>`;
+  const pbs=saveToLeaderboard({shop:shopName+' '+shopTagline,score,grade:g.grade,diff:currentDiff,turn:state.turn-1});
+  updateUnlocks(g.grade);
+  renderUnlockRoster();
+  // Personal best banner
+  const pbEl=document.getElementById('pb-banner');
+  if(pbEl){
+    if(pbs&&pbs.length>0){
+      const labels=[];
+      if(pbs.includes('bestTurns')) labels.push('🕐 Longest run');
+      if(pbs.includes('bestGrade')) labels.push('⭐ Best grade');
+      if(pbs.includes('bestScore')) labels.push('🏆 Top score');
+      pbEl.innerHTML='New personal best! &nbsp;'+labels.map(l=>`<span class="pb-item">${l}</span>`).join('');
+      pbEl.className='pb-banner visible';
+    } else {
+      pbEl.className='pb-banner';
+    }
+  }
+  renderLeaderboard('lb-go-rows');
+}
+
+// ─── Log ───────────────────────────────────────────────────────────────────
+let logExpanded=false;
+
+function toggleLog(){
+  logExpanded=!logExpanded;
+  const entries=document.getElementById('log-entries');
+  const chevron=document.getElementById('log-chevron');
+  const fade=document.getElementById('log-fade');
+  entries.className='log-entries'+(logExpanded?' expanded':'');
+  chevron.className='log-chevron'+(logExpanded?' open':'');
+  if(fade) fade.className='log-fade'+(logExpanded?' hidden':'');
+}
+
+function addLog(type,entry){
+  const el=document.getElementById('log-entries');
+  if(!el)return;
+  const tag=type==='event'?`<span class="ev-tag">[event]</span>`:`<span class="t-num">T${state.turn-1}</span>`;
+  el.innerHTML=`<div class="log-entry">${tag} ${entry}</div>`+el.innerHTML;
+  // Keep fade visible whenever collapsed and has content
+  const fade=document.getElementById('log-fade');
+  if(fade&&!logExpanded) fade.className='log-fade';
+}
+
+// ─── Events ────────────────────────────────────────────────────────────────
+function scheduleEvent(){
+  const d=DIFFICULTY[currentDiff];
+  const used=evQ.map(e=>e.id);
+  const pool=EVENTS.filter(e=>!used.includes(e.id));
+  if(pool.length>0)evQ.push(pick(pool));
+}
+
+function maybeShowEvent(){
+  if(state.turn>1&&(state.turn-1)%nextEvIn===0&&evQ.length>0){
+    const ev=evQ.shift();
+    const d=DIFFICULTY[currentDiff];
+    nextEvIn=rndBetween(d.eventFreqMin,d.eventFreqMax);
+    scheduleEvent();showEvent(ev);return true;
+  }return false;
+}
+
+function showEvent(ev){
+  document.getElementById('main-play').style.display='none';hideBanner();
+  document.getElementById('event-card').style.display='block';
+  document.getElementById('event-kicker').textContent=ev.kicker||'Random Event';
+  document.getElementById('event-title').textContent=ev.title;
+  document.getElementById('event-desc').textContent=ev.desc;
+  const eb=document.getElementById('event-btns');eb.innerHTML='';
+  ev.choices.forEach((ch,i)=>{
+    const b=document.createElement('button');b.textContent=ch.label;
+    if(i===0)b.classList.add('primary');
+    b.onclick=()=>resolveEvent(ev,i,b);eb.appendChild(b);
+  });
+}
+
+function resolveEvent(ev,i,btn){
+  const ch=ev.choices[i];
+  const{dm,dr,ds,dc}=applyDiff(ch.m,ch.r,ch.s,ch.c);
+  state.money+=jitter(dm);state.rep+=jitter(dr);state.stress+=jitter(ds);state.chaos+=jitter(dc);
+  applyUpgradePerTurn();
+  state.turn++;updateStats();
+  triggerBurst(ch.m+ch.r>5?['🎉','💰','⭐']:['😬','💔','⚡'],btn);
+  addLog('event',`[${ev.kicker}] ${ch.label} — ${ch.txt}`);
+  document.getElementById('event-card').style.display='none';
+  const go=checkGO();if(go){triggerGO(go);return;}
+  if(checkMilestones())return;
+  if(maybeShowEndOfDay())return;
+  showBanner(ch.txt,'var(--surface2)','var(--text2)','var(--border)',true);
+  document.getElementById('main-play').style.display='block';
+  nextCustomer();
+}
+
+// ─── Stat delta preview helpers ────────────────────────────────────────────
+function buildSymbols(val,positiveIsGood){
+  // Returns {html, cls} where cls is pos/neg/neu
+  const n=Math.round(val);
+  if(n===0)return null;
+  const isGood=positiveIsGood?n>0:n<0;
+  const cls=isGood?'pos':'neg';
+  const arrow=isGood?'▲':'▼';
+  const abs=Math.abs(n);
+  const count=abs>=8?3:abs>=4?2:1;
+  return{html:arrow.repeat(count),cls};
+}
+
+function buildDeltaHTML(m,r,s,c){
+  const stats=[
+    {label:'💰',val:m,good:true},
+    {label:'⭐',val:r,good:true},
+    {label:'😰',val:s,good:false},
+    {label:'🔥',val:c,good:false},
+  ];
+  return stats.map(({label,val,good})=>{
+    const sym=buildSymbols(val,good);
+    if(!sym)return`<span class="btn-delta-item neu">${label}~</span>`;
+    return`<span class="btn-delta-item ${sym.cls}">${label}${sym.html}</span>`;
+  }).join('');
+}
+
+// ─── Progress bar ──────────────────────────────────────────────────────────
+function updateProgressBar(){
+  const GOAL=30;
+  const t=state.turn-1;
+  const fill=document.getElementById('progress-fill');
+  if(fill){
+    if(!pushedOn){
+      const pct=Math.round((Math.min(t,GOAL)/GOAL)*100);
+      fill.style.width=pct+'%';
+      fill.className='progress-fill'+(t>=GOAL?' done':t>=20?' warn':'');
+    } else {
+      // After turn 30: show progress toward next checkpoint (every 20 turns)
+      const base=30+Math.floor((t-30)/20)*20;
+      const next=base+20;
+      const pct=Math.round(((t-base)/20)*100);
+      fill.style.width=pct+'%';
+      fill.className='progress-fill warn';
+    }
+  }
+  const pt=document.getElementById('progress-turns');
+  if(pt){
+    if(!pushedOn){
+      pt.textContent='Turn '+t+' / '+GOAL;
+    } else {
+      const nextCheckpoint=30+Math.ceil((t-30)/20)*20;
+      const remaining=nextCheckpoint-t;
+      pt.textContent='Turn '+t+' — next quit in '+remaining+(pendingRewardAt?' · reward at turn '+pendingRewardAt:'');
+    }
+  }
+  const mileDots=[{id:'ms-15',turn:15},{id:'ms-25',turn:25},{id:'ms-30',turn:30}];
+  mileDots.forEach(({id,turn:mt})=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.className='progress-milestone '+(t>mt?'passed':t===mt?'reached':'pending');
+  });
+}
+
+// ─── Milestones ────────────────────────────────────────────────────────────
+function checkMilestones(){
+  const t=state.turn-1;
+  // Fixed early milestones (turn 15 and 25)
+  if(t===15&&!milestoneTriggered.has(15)){
+    milestoneTriggered.add(15);
+    showMilestoneUpgrade();
+    return true;
+  }
+  if(t===25&&!milestoneTriggered.has(25)){
+    milestoneTriggered.add(25);
+    state.rep=Math.min(100,state.rep+10);
+    updateStats();
+    showBanner('⭐ Loyal customer surge! +10 Rep — word has spread far and wide.','var(--green-dim)','var(--green-text)','var(--green)',true);
+  }
+  // Turn 30, then every 20 turns after (50, 70, 90...)
+  const isCheckpoint=(t===30)||(pushedOn&&t>30&&(t-30)%20===0);
+  if(isCheckpoint&&!milestoneTriggered.has(t)){
+    milestoneTriggered.add(t);
+    showWinChoice(t);
+    return true;
+  }
+  // Reward delivery: after pushing on, reward fires 20 turns after the last checkpoint
+  // (handled inside pushOn via pendingRewardAt)
+  if(pushedOn&&typeof pendingRewardAt==='number'&&t===pendingRewardAt){
+    pendingRewardAt=null;
+    grantContinueReward();
+  }
+  return false;
+}
+
+function showMilestoneUpgrade(){
+  const available=UPGRADES.filter(u=>!ownedUpgrades.has(u.id));
+  const pool=available.length>=2?[...available].sort(()=>Math.random()-0.5).slice(0,2):available;
+  if(pool.length===0){
+    state.money+=20;updateStats();
+    showBanner('🎁 You own every upgrade — here\'s £20 instead.','var(--amber-dim)','var(--amber-text)','var(--amber)',true);
+    return;
+  }
+  const grid=document.getElementById('milestone-upgrade-grid');
+  grid.innerHTML=pool.map(u=>`
+    <div class="milestone-upg" onclick="claimFreeUpgrade('${u.id}')">
+      <div class="mu-icon">${u.icon}</div>
+      <div class="mu-name">${u.name}</div>
+      <div class="mu-effect">${u.effect}</div>
+    </div>`).join('');
+  document.getElementById('milestone-card').style.display='block';
+  document.getElementById('main-play').style.display='none';
+  hideBanner();
+  if(window.getSelection) window.getSelection().removeAllRanges();
+}
+
+function claimFreeUpgrade(id){
+  const upg=UPGRADES.find(u=>u.id===id);
+  if(!upg)return;
+  ownedUpgrades.add(id);upg.onBuy(state);updateStats();renderUpgrades();
+  document.getElementById('milestone-card').style.display='none';
+  document.getElementById('main-play').style.display='block';
+  showBanner(`${upg.icon} ${upg.name} installed free! ${upg.effect}`,'var(--amber-dim)','var(--amber-text)','var(--amber)',true);
+  nextCustomer();
+}
+
+function showWinChoice(t){
+  const isFirst=t===30;
+  document.getElementById('win-card-kicker').textContent=isFirst?'Turn 30 — Survival Goal Reached':'Turn '+t+' — Another Checkpoint';
+  document.getElementById('win-card-title').textContent=isFirst?'You made it. Thirty turns.':'Still standing. Remarkable.';
+  document.getElementById('win-card-desc').textContent=isFirst
+    ?'Against all odds — including Karen, the pigeons, and that sausage roll — the shop is still standing. What now?'
+    :'Twenty more turns survived. You can walk away now with your score, or push on for another reward.';
+  document.getElementById('win-reward-preview').textContent='Survive 20 more turns for a reward.';
+  document.getElementById('win-card').style.display='block';
+  document.getElementById('main-play').style.display='none';
+  hideBanner();
+}
+
+function closeShop(){
+  document.getElementById('win-card').style.display='none';
+  const t=state.turn-1;
+  const winResult={icon:'🏆',title:'You closed up shop.',reason:`Survived ${t} turns with dignity intact.`,flavour:'The key is in the till. The kettle is off. You did it.'};
+  triggerGO(winResult);
+}
+
+// Track when the next reward fires
+let pendingRewardAt=null;
+
+function pushOn(){
+  pushedOn=true;
+  const t=state.turn-1;
+  pendingRewardAt=t+20; // reward fires 20 turns from now
+  document.getElementById('win-card').style.display='none';
+  document.getElementById('main-play').style.display='block';
+  nextEvIn=1; // events every turn
+  updateProgressBar();
+  showBanner('💪 Pushing on! Events every turn. Survive 20 more for a reward.','var(--red-dim)','var(--red-text)','var(--red)',true);
+  nextCustomer();
+}
+
+function grantContinueReward(){
+  const allUpgradesOwned=UPGRADES.every(u=>ownedUpgrades.has(u.id));
+  // Pool: upgrade (if available), random supply, £20 cash
+  const rewardPool=[];
+  if(!allUpgradesOwned) rewardPool.push('upgrade');
+  rewardPool.push('supply','cash');
+  const choice=pick(rewardPool);
+  if(choice==='upgrade'||allUpgradesOwned&&choice==='upgrade'){
+    // Shouldn't reach here if allOwned, but fallthrough to cash just in case
+    grantRewardUpgrade();
+  } else if(choice==='supply'){
+    const supply=pick(CONSUMABLES);
+    // Apply supply effect directly (free, no cost)
+    if(supply.stat==='stress') state.stress=clamp(state.stress+supply.delta,0,100);
+    else if(supply.stat==='rep') state.rep=clamp(state.rep+supply.delta,0,100);
+    else if(supply.stat==='chaos') state.chaos=Math.max(0,state.chaos+supply.delta);
+    updateStats();
+    showBanner(`🎁 Reward: Free ${supply.name}! ${supply.quip}`,'var(--green-dim)','var(--green-text)','var(--green)',true);
+  } else {
+    state.money+=20;
+    updateStats();
+    showBanner('🎁 Reward: £20 cash! The universe owes you that much.','var(--amber-dim)','var(--amber-text)','var(--amber)',true);
+  }
+}
+
+function grantRewardUpgrade(){
+  const available=UPGRADES.filter(u=>!ownedUpgrades.has(u.id));
+  if(available.length===0){
+    // Fallback to cash
+    state.money+=20;updateStats();
+    showBanner('🎁 Reward: £20 cash — you already own everything!','var(--amber-dim)','var(--amber-text)','var(--amber)',true);
+    return;
+  }
+  const upg=pick(available);
+  ownedUpgrades.add(upg.id);upg.onBuy(state);updateStats();renderUpgrades();
+  showBanner(`🎁 Reward: Free ${upg.icon} ${upg.name}! ${upg.effect}`,'var(--green-dim)','var(--green-text)','var(--green)',true);
+}
+
+// ─── End of day ────────────────────────────────────────────────────────────
+const EOD_FLAVOUR={
+  great:[
+    "A genuinely good day. You're almost suspicious of how well it went.",
+    "The pigeons behaved. The regulars tipped. Today was the one.",
+    "Even Karen left without incident. Frame this day.",
+    "You closed the till with a smile. First time this week.",
+    "Mrs Patel said you're her favourite shop. In the whole street.",
+  ],
+  decent:[
+    "A respectable day. The sort you don't need to tell anyone about.",
+    "Nobody cried. One minor incident near the crisps. Could be worse.",
+    "The till balanced. Your back does not. Fair trade.",
+    "Solid. Unspectacular. The cornerstone of corner shop life.",
+    "Dave talked for forty minutes. You survived. Growth.",
+  ],
+  rough:[
+    "You've had better days. You've also had worse. Today was neither.",
+    "The queue got tense around 2pm. The biscuits were involved.",
+    "Closing time arrived like a pardon from a judge.",
+    "The health inspector drove past slowly. Just slowly.",
+    "You ate the display sausage roll. It was that kind of day.",
+  ],
+  disaster:[
+    "Tomorrow will be better. It statistically has to be.",
+    "The shop smells like stress. You are the shop.",
+    "You locked up, sat in your car, and stared at nothing for eight minutes.",
+    "Beryl came back three times. Three. Times.",
+    "The pigeons seem smug. You don't know why. That's the worst part.",
+  ],
+};
+
+function getEodFlavour(moneyDelta,repDelta){
+  const score=moneyDelta+repDelta*2;
+  if(score>=20)return pick(EOD_FLAVOUR.great);
+  if(score>=5) return pick(EOD_FLAVOUR.decent);
+  if(score>=-5) return pick(EOD_FLAVOUR.rough);
+  return pick(EOD_FLAVOUR.disaster);
+}
+
+function maybeShowEndOfDay(){
+  const DAY_LENGTH=20;
+  const turnInRun=state.turn-1;
+  if(turnInRun>0&&turnInRun%DAY_LENGTH===0&&turnInRun!==lastEodTurn){
+    lastEodTurn=turnInRun;
+    showEndOfDay(turnInRun);
+    return true;
+  }
+  return false;
+}
+
+function showEndOfDay(turnInRun){
+  const dayNum=Math.floor(turnInRun/20);
+  const dayName=DAYS[(dayNum-1)%7];
+  const nextDayName=DAYS[dayNum%7];
+  const moneyDelta=state.money-daySnapshot.money;
+  const repDelta=state.rep-daySnapshot.rep;
+
+  // Stress bonus
+  let bonusText='';
+  if(state.stress<50){
+    state.rep=Math.min(100,state.rep+3);
+    bonusText=' +3 Rep for keeping your cool.';
+    updateStats();
+  }
+
+  // Build stat cells
+  const statsEl=document.getElementById('eod-stats');
+  const moneyVal=moneyDelta>=0?'+£'+moneyDelta:'−£'+Math.abs(moneyDelta);
+  const repVal=repDelta>=0?'+'+repDelta:String(repDelta);
+  statsEl.innerHTML=[
+    {lbl:'Day',       val:dayName,                              cls:'neu'},
+    {lbl:'Turns',     val:String(20),                           cls:'neu'},
+    {lbl:'Money',     val:moneyVal,                             cls:moneyDelta>=0?'pos':'neg'},
+    {lbl:'Reputation',val:repVal+(bonusText?' ★':''),            cls:repDelta>=0?'pos':'neg'},
+  ].map(c=>`<div class="eod-stat"><div class="eod-stat-lbl">${c.lbl}</div><div class="eod-stat-val ${c.cls}">${c.val}</div></div>`).join('');
+
+  document.getElementById('eod-title').textContent=`End of ${dayName}`;
+  document.getElementById('eod-flavour').textContent=getEodFlavour(moneyDelta,repDelta)+(bonusText?bonusText:'');
+  document.getElementById('eod-next-day').textContent=nextDayName;
+  document.getElementById('event-card').style.display='none';
+  document.getElementById('eod-card').style.display='block';
+  document.getElementById('main-play').style.display='none';
+  hideBanner();
+
+  // Update snapshot for next day
+  daySnapshot={money:state.money,rep:state.rep,turn:state.turn};
+}
+
+function dismissEod(){
+  document.getElementById('eod-card').style.display='none';
+  document.getElementById('main-play').style.display='block';
+  nextCustomer();
+}
+
+// ─── Customers ─────────────────────────────────────────────────────────────
+function nextCustomer(){
+  acted=false;
+  if(!maybeShowEvent())hideBanner();
+  cur=pick(buildCustomerPool());curAct=ACTIONS[cur.flavor];
+  // Track visits for stateful customers
+  const visitKey={chatty:'dave',suspicious:'edna',bargain:'beryl',rush:'raj'}[cur.flavor];
+  if(visitKey) sp.visits[visitKey]++;
+  // Apply visit overrides (greeting, action hints)
+  const ov=getVisitOverrides(cur.flavor);
+  document.getElementById('cust-name').textContent=cur.name;
+  document.getElementById('cust-tag').textContent=cur.tag+(ov?' ★':'');
+  document.getElementById('cust-desc').textContent=cur.desc;
+  document.getElementById('cust-greeting').textContent=ov?ov.greeting:cur.greeting;
+  // Portrait
+  document.getElementById('cust-portrait').textContent=cur.avatar||'';
+  // Mood bar — 5 blocks, filled up to cur.mood, colour class based on mood level
+  const moodEl=document.getElementById('cust-mood');
+  moodEl.innerHTML=Array.from({length:5},(_,i)=>{
+    const filled=i<cur.mood;
+    return`<div class="mood-block ${filled?'filled-'+cur.mood:'empty'}"></div>`;
+  }).join('');
+  const badge=document.getElementById('cust-badge');
+  if(cur.badge){badge.style.display='inline-block';badge.textContent=cur.badge.label;badge.style.background=cur.badge.bg;badge.style.color=cur.badge.color;badge.style.borderColor=cur.badge.border;}
+  else badge.style.display='none';
+  if(cur.flavor==='vip'){sp.vipVisits++;if(sp.vipVisits>1)showBanner('Returning VIP — he remembers you.','var(--purple-dim)','var(--purple-text)','var(--purple)',false);}
+  if(cur.flavor==='karen'&&sp.karenIgnoreCount>=2)showBanner(`WARNING: Karen ignored ${sp.karenIgnoreCount} times. Chaos spike next ignore.`,'var(--red-dim)','var(--red-text)','var(--red)',false);
+  ['a','b','c'].forEach((id,i)=>{
+    const b=document.getElementById('btn-'+id);
+    const a=curAct[i];
+    const{dm,dr,ds,dc}=applyDiff(a.m,a.r,a.s,a.c);
+    b.innerHTML=`<span class="btn-label">${a.label}</span><span class="btn-delta">${buildDeltaHTML(dm,dr,ds,dc)}</span>`;
+    b.disabled=false;
+  });
+  document.getElementById('outcome-box').style.display='none';
+}
+
+// ─── Actions ───────────────────────────────────────────────────────────────
+function doAction(i){
+  if(acted)return;acted=true;
+  const a=curAct[i],fl=cur.flavor;
+  let{dm,dr,ds,dc}=applyDiff(a.m,a.r,a.s,a.c);
+  dm=jitter(dm);dr=jitter(dr);ds=jitter(ds);dc=jitter(dc);
+  let extra='';
+  if(fl==='karen'&&i===2){sp.karenIgnoreCount++;if(sp.karenIgnoreCount>=2){const chaosBump=Math.round(7*DIFFICULTY[currentDiff].chaosMult);dc+=chaosBump;extra=' CHAOS SPIKE! Karen escalating.';}else extra=' Karen is composing a strongly-worded letter.';}
+  if(fl==='karen'&&i!==2&&sp.karenIgnoreCount>0){extra=' (Karen ignore count reset.)';sp.karenIgnoreCount=0;}
+  if(fl==='vip'&&i===0&&sp.vipVisits>=2){dm+=12;extra=' LOYALTY BONUS: +£12 tip!';}
+  if(fl==='tourist'&&i===0){sp.touristHelpCount++;if(sp.touristHelpCount%3===0){dr+=5;extra=' Word spreads: +5 rep for helping tourists.';}}
+  if(fl==='rude'&&i===1){ds-=3;extra=' That felt good. Stress down.';}
+  if(fl==='bargain'&&i===2){dm+=2;extra=' Grudging respect from a seasoned haggler.';}
+  if(fl==='wannabe'&&i===0){dc+=1;extra=' You deeply regret encouraging her.';}
+  // Donna: chaos swing ±2 (kids unpredictable), always +2 rep goodwill
+  if(fl==='donna'){dc+=Math.floor(Math.random()*5)-2;dr+=2;}
+  // Investor: action 0 grants permanent +1 money/turn for rest of run
+  if(fl==='investor'&&i===0&&investorBonus===0){investorBonus=1;extra+=' PERMANENT BONUS: +£1 per turn for the rest of this run.';}
+  // Visit override bonuses for returning customers
+  const visitOv=getVisitOverrides(fl);
+  if(visitOv&&visitOv.actionOverride&&visitOv.actionOverride[i]){
+    const vob=visitOv.actionOverride[i];
+    if(vob.bonus==='dm') dm+=vob.val;
+    else if(vob.bonus==='dr') dr+=vob.val;
+    else if(vob.bonus==='ds') ds+=vob.val;
+    else if(vob.bonus==='dc') dc+=vob.val;
+    extra+=vob.note;
+  }
+  state.money+=dm;state.rep+=dr;state.stress+=ds;state.chaos+=dc;
+  applyUpgradePerTurn();
+  state.turn++;updateStats();
+  const emojis=ACTION_EMOJIS[fl]?ACTION_EMOJIS[fl][i]:a.score>=2?['✅','💚','⭐']:a.score<=-1?['😬','💔','🔥']:['😐','🤷','🔄'];
+  triggerBurst(emojis,document.getElementById(['btn-a','btn-b','btn-c'][i]));
+  const msg=pick(a.txt)+extra;
+  const ob=document.getElementById('outcome-box');ob.textContent=msg;ob.style.display='block';
+  addLog('customer',`${cur.name} (${cur.tag}): ${a.label} — ${msg}`);
+  ['a','b','c'].forEach(id=>document.getElementById('btn-'+id).disabled=true);
+  const go=checkGO();if(go){setTimeout(()=>triggerGO(go),1200);return;}
+  if(checkMilestones())return;
+  if(maybeShowEndOfDay())return;
+  setTimeout(nextCustomer,1800);
+}
+
+// ─── Emoji burst ───────────────────────────────────────────────────────────
+function triggerBurst(emojis,originEl){
+  const container=document.getElementById('burst-container');
+  const rect=originEl.getBoundingClientRect();
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  emojis.forEach((em,i)=>{
+    const el=document.createElement('div');el.className='burst-emoji';el.textContent=em;
+    const angle=(i/emojis.length)*2*Math.PI+Math.random()*0.6;
+    const dist=55+Math.random()*75;
+    const tx=Math.cos(angle)*dist,ty=Math.sin(angle)*dist-30;
+    const rot=(Math.random()-0.5)*200,dur=0.65+Math.random()*0.45;
+    el.style.cssText=`left:${cx}px;top:${cy}px;--tx:${tx}px;--ty:${ty}px;--rot:${rot}deg;--dur:${dur}s;`;
+    container.appendChild(el);setTimeout(()=>el.remove(),dur*1000+100);
+  });
+}
+
+// ─── Boot ───────────────────────────────────────────────────────────────────
+renderLeaderboard('lb-start-rows');
+renderStatPills('lb-stat-pills');
+renderUnlockRoster();
+</script>
+</body>
+</html>
